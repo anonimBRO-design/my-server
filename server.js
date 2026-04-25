@@ -1,10 +1,17 @@
-const express = require("express");
-const app = express();
-const path = require("path");
+const express = require('express')
+const path = require('path')
+const app = express()
 
-app.use(express.static(path.join(__dirname, "public")));
+// serve file static
+app.use(express.static(path.join(__dirname, 'public')))
 
-const PORT = process.env.PORT || 3000;
+// route root
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/index.html'))
+})
+
+// IMPORTANT: pakai PORT dari Railway
+const PORT = process.env.PORT || 3000
 app.listen(PORT, () => {
-  console.log("Server jalan di port " + PORT);
-});
+  console.log('Server jalan di port ' + PORT)
+})
