@@ -2,16 +2,16 @@ const express = require('express')
 const path = require('path')
 const app = express()
 
-// serve file static
+// serve folder public
 app.use(express.static(path.join(__dirname, 'public')))
 
-// route root
+// route root wajib
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/index.html'))
 })
 
-// IMPORTANT: pakai PORT dari Railway
+// port railway
 const PORT = process.env.PORT || 3000
 app.listen(PORT, () => {
-  console.log('Server jalan di port ' + PORT)
+  console.log('Server jalan di ' + PORT)
 })
