@@ -8,164 +8,110 @@
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Exo+2:wght@300;400;700;900&display=swap" rel="stylesheet">
 
 <style>
-:root {
+:root{
   --gold:#daa520;
   --gold-dark:#b8860b;
-  --gold-light:#f0c040;
-  --brown:#8b4513;
-  --brown-light:#a0522d;
-  --cream:#fffaf0;
-  --cream2:#f5f5dc;
-  --bg-grad:linear-gradient(135deg,#b8860b 0%,#daa520 50%,#cd853f 100%);
-  --card-bg:linear-gradient(145deg,#fff8dc,#f0e68c88);
+  --bg:#fffaf0;
   --text:#3b1a00;
-  --sub:#a0522d;
-  --border:#daa520;
-  --input-bg:#fffaf0;
-  --shadow:rgba(184,134,11,0.35);
-  --header-bg:linear-gradient(45deg,#b8860b,#daa520,#cd853f);
-  --container-bg:linear-gradient(145deg,#f5f5dc,#d2b48c);
-  --danger:#c0392b;
-  --success:#27ae60;
 }
 
 [data-theme="dark"]{
-  --gold:#ffd700;
-  --gold-dark:#c8a800;
-  --gold-light:#ffe566;
-  --brown:#f4c16e;
-  --brown-light:#d4a55a;
-  --cream:#1a1200;
-  --cream2:#241a00;
-  --bg-grad:linear-gradient(135deg,#1a1200 0%,#2d2000 50%,#1e1500 100%);
-  --card-bg:linear-gradient(145deg,#2a1e00cc,#352800cc);
+  --bg:#1a1200;
   --text:#faeaaa;
-  --sub:#c8a050;
-  --border:#c8a800;
-  --input-bg:#1e1600;
-  --shadow:rgba(255,215,0,0.18);
-  --header-bg:linear-gradient(45deg,#2d2000,#c8a800,#3a2800);
-  --container-bg:linear-gradient(145deg,#1a1200,#2d2000);
-  --danger:#e74c3c;
-  --success:#2ecc71;
 }
 
 *{margin:0;padding:0;box-sizing:border-box}
 
 body{
   font-family:'Exo 2',sans-serif;
-  background:var(--bg-grad);
+  background:var(--bg);
+  color:var(--text);
   min-height:100vh;
   padding:20px;
+  transition:.3s;
 }
 
 .container{
-  max-width:950px;
-  margin:0 auto;
-  background:var(--container-bg);
-  border-radius:28px;
+  max-width:900px;
+  margin:auto;
+  border:2px solid var(--gold);
+  border-radius:20px;
   overflow:hidden;
-  border:2px solid var(--border);
-  box-shadow:0 30px 60px var(--shadow);
 }
 
-/* HEADER */
 .header{
-  background:var(--header-bg);
-  padding:36px;
+  background:linear-gradient(45deg,var(--gold-dark),var(--gold));
+  padding:30px;
   text-align:center;
   color:#fff;
   position:relative;
 }
 
-.header h1{
-  font-family:'Rajdhani';
-  font-size:2.5em;
-}
-
 .theme-btn{
   position:absolute;
-  top:18px;
-  right:18px;
-  width:42px;
-  height:42px;
+  right:15px;
+  top:15px;
+  width:40px;
+  height:40px;
   border-radius:50%;
-  border:2px solid rgba(255,255,255,0.3);
-  background:rgba(255,255,255,0.1);
-  cursor:pointer;
-}
-
-/* NAV */
-.nav-tabs{
-  display:flex;
-  border-bottom:3px solid var(--border);
-}
-
-.nav-tab{
-  flex:1;
-  padding:14px;
-  background:none;
   border:none;
   cursor:pointer;
+}
+
+.nav{
+  display:flex;
+}
+
+.nav button{
+  flex:1;
+  padding:12px;
+  border:none;
+  cursor:pointer;
+  background:#eee;
   font-weight:bold;
-  color:var(--sub);
 }
 
-.nav-tab.active{
-  background:var(--cream);
-  border-bottom:3px solid var(--gold-dark);
-  color:var(--gold-dark);
+.nav button.active{
+  background:#fff;
+  border-bottom:3px solid var(--gold);
 }
 
-/* CONTENT */
-.content{padding:40px}
-
-.section{display:none}
+.section{display:none;padding:30px}
 .section.active{display:block}
 
-.form-group{margin-bottom:20px}
+.form-group{margin-bottom:15px}
 
-label{display:block;margin-bottom:8px;color:var(--brown);font-weight:600}
-
-input,select{
+input{
   width:100%;
-  padding:14px;
-  border:2px solid var(--border);
+  padding:12px;
+  border:2px solid var(--gold);
   border-radius:10px;
-  background:var(--input-bg);
-  color:var(--text);
 }
 
-/* BUTTON */
 .btn{
   width:100%;
-  padding:16px;
+  padding:14px;
   border:none;
-  border-radius:12px;
   background:linear-gradient(45deg,var(--gold-dark),var(--gold));
   color:#fff;
   font-weight:bold;
   cursor:pointer;
+  border-radius:10px;
 }
 
-/* LOGIN CARD */
-.login-card{
-  max-width:420px;
-  margin:auto;
+/* ROLE */
+.role{
+  display:flex;
+  gap:15px;
+}
+
+.role div{
+  flex:1;
+  padding:20px;
+  border:2px solid var(--gold);
   text-align:center;
-}
-
-.role-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:16px;
-}
-
-.role-card{
-  padding:30px;
-  border-radius:16px;
-  border:2px solid var(--border);
   cursor:pointer;
+  border-radius:12px;
 }
 
 /* TOAST */
@@ -173,16 +119,19 @@ input,select{
   position:fixed;
   bottom:20px;
   right:20px;
-  padding:14px 20px;
-  border-radius:12px;
+  background:#000;
   color:#fff;
+  padding:12px 18px;
+  border-radius:10px;
   opacity:0;
-  transform:translateY(60px);
+  transform:translateY(50px);
   transition:.3s;
 }
 
-.toast.show{opacity:1;transform:translateY(0)}
-
+.toast.show{
+  opacity:1;
+  transform:translateY(0);
+}
 </style>
 </head>
 
@@ -191,47 +140,69 @@ input,select{
 <div class="container">
 
   <div class="header">
+    <h2>🎮 INTRO FF</h2>
     <button class="theme-btn" id="themeBtn">🌙</button>
-    <h1>🎮 INTRO FF</h1>
   </div>
 
-  <div class="nav-tabs">
-    <button class="nav-tab active" onclick="switchTab()">Intro</button>
-    <button class="nav-tab">Admin</button>
+  <div class="nav">
+    <button class="active" id="tab1">Intro</button>
+    <button id="tab2">Admin</button>
   </div>
 
-  <div class="content">
+  <div class="section active" id="intro">
 
-    <div id="loginSection" class="section active">
-      <div class="login-card">
-        <h2>Pilih Role</h2>
-        <div class="role-grid">
-          <div class="role-card" onclick="alert('user')">User</div>
-          <div class="role-card" onclick="alert('admin')">Admin</div>
-        </div>
-      </div>
+    <div class="role">
+      <div onclick="selectRole('user')">User</div>
+      <div onclick="selectRole('admin')">Admin</div>
     </div>
 
-    <div id="introSection" class="section">
-      <div class="form-group">
-        <label>ID FF</label>
-        <input>
-      </div>
-      <button class="btn">INTRO</button>
+    <div class="form-group">
+      <label>ID FF</label>
+      <input id="ffid">
     </div>
 
+    <button class="btn" id="introBtn">INTRO</button>
+
   </div>
+
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-const btn = document.getElementById("themeBtn");
+/* ===== THEME (FIXED CSP SAFE) ===== */
+const themeBtn = document.getElementById("themeBtn");
 
-btn.onclick = () => {
-  document.body.classList.toggle("dark");
+themeBtn.addEventListener("click", () => {
+  document.documentElement.dataset.theme =
+    document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  showToast("Theme berubah");
+});
+
+/* ===== ROLE ===== */
+function selectRole(r){
+  showToast("Pilih: " + r);
+}
+
+/* ===== BUTTON FIX ===== */
+document.getElementById("introBtn").addEventListener("click", () => {
+  const val = document.getElementById("ffid").value;
+  if(!val){
+    showToast("ID kosong!");
+    return;
+  }
+  showToast("Intro berhasil!");
+});
+
+/* ===== NAV FIX ===== */
+document.getElementById("tab1").onclick = () => {
+  document.getElementById("intro").classList.add("active");
+};
+document.getElementById("tab2").onclick = () => {
+  showToast("Admin belum dibuat");
 };
 
+/* ===== TOAST ===== */
 function showToast(msg){
   const t = document.getElementById("toast");
   t.textContent = msg;
