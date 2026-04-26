@@ -1,63 +1,209 @@
+require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const path = require("path");
+const rateLimit = require("express-rate-limit");
+const helmet = require("helmet");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const redis = require("redis");
+const mongoSanitize = require("express-mongo-sanitize");
 
 const app = express();
 
-app.use(cors());
-app.use(express.json());
+// ============================================================
+// SECURITY HEADERS
+// ============================================================
+app.use(helmet());
+
+// ============================================================
+// BASIC SECURITY MIDDLEWARE
+// ============================================================
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "DELETE"]
+}));
+
+app.use(express.json({ limit: "10kb" })); // anti payload besar
 app.use(express.static(path.join(__dirname, "public")));
+app.use(mongoSanitize());
 
-// 🔥 CONNECT DATABASE
-mongoose.connect("mongodb+srv://axiooxjkt48pro_db_user:LwEII86ghHvHxhJ0@intro.ifepmi9.mongodb.net/introDB")
+// ============================================================
+// RATE LIMIT GLOBAL (HARDENED)
+// ============================================================
+app.set("trust proxy", 1);
+
+app.use(rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 80,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests" }
+}));
+
+// ============================================================
+// REDIS (CACHE + ANTI BOT TRACKING)
+// ============================================================
+const redisClient = redis.createClient({
+  url: process.env.REDIS_URL || "redis://localhost:6379"
+});
+
+redisClient.connect()
+  .then(() => console.log("⚡ Redis Connected"))
+  .catch(err => console.log(err));
+
+// ============================================================
+// JWT SECRET (ENV)
+// ============================================================
+const JWT_SECRET = process.env.JWT_SECRET || "CHANGE_THIS_SECRET";
+
+// ============================================================
+// DATABASE
+// ============================================================
+mongoose.connect(process.env.MONGO_URL)
   .then(() => console.log("✅ MongoDB Connected"))
-  .catch(err => console.log("❌ MongoDB Error:", err));
+  .catch(err => console.log(err));
 
-// 🔥 SCHEMA
+// ============================================================
+// SCHEMA
+// ============================================================
+const UserSchema = new mongoose.Schema({
+  username: String,
+  password: String,
+  createdAt: { type: Date, default: Date.now }
+});
+
 const IntroSchema = new mongoose.Schema({
-  ffId:       String,
+  ffId: String,
   namaInGame: String,
-  namaReal:   String,
-  levelAkun:  Number,
-  usia:       Number,
-  kota:       String,
-  tanggal:    String,
-  waktu:      String,
+  namaReal: String,
+  levelAkun: Number,
+  usia: Number,
+  kota: String,
+  tanggal: String,
+  waktu: String,
 }, { timestamps: true });
 
+const User = mongoose.model("User", UserSchema);
 const Intro = mongoose.model("Intro", IntroSchema);
 
 // ============================================================
-// SSE — daftar semua client yang sedang konek
+// AUTH MIDDLEWARE (HARDENED JWT)
+// ============================================================
+function auth(req, res, next) {
+  const header = req.headers["authorization"];
+  if (!header) return res.status(401).json({ error: "No token" });
+
+  const token = header.split(" ")[1];
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET, {
+      maxAge: "1h"
+    });
+
+    req.user = decoded;
+    next();
+  } catch {
+    return res.status(401).json({ error: "Invalid token" });
+  }
+}
+
+// ============================================================
+// SIMPLE ANTI BOT LAYER
+// ============================================================
+app.use((req, res, next) => {
+  const ip = req.ip;
+  const ua = req.headers["user-agent"];
+
+  if (!ua || ua.length < 10) {
+    return res.status(403).json({ error: "Bot blocked" });
+  }
+
+  // simple abuse tracking
+  redisClient.incr(ip);
+  redisClient.expire(ip, 60);
+
+  next();
+});
+
+// ============================================================
+// SSE CLIENTS (HARDENED)
 // ============================================================
 let sseClients = [];
 
-function broadcastSSE(eventName, data) {
-  const payload = `event: ${eventName}\ndata: ${JSON.stringify(data)}\n\n`;
+function broadcastSSE(event, data) {
+  const msg = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+
   sseClients = sseClients.filter(client => {
-    try { client.write(payload); return true; }
-    catch { return false; }
+    try {
+      client.write(msg);
+      return true;
+    } catch {
+      return false;
+    }
   });
 }
 
 // ============================================================
-// ROUTES
+// AUTH ROUTES (ANTI BRUTE FORCE)
 // ============================================================
 
-// 🔥 SSE — admin subscribe realtime
-app.get("/intro/stream", (req, res) => {
+app.post("/auth/register", async (req, res) => {
+  const hash = await bcrypt.hash(req.body.password, 12);
+
+  const user = new User({
+    username: req.body.username,
+    password: hash
+  });
+
+  await user.save();
+  res.json({ status: "registered" });
+});
+
+// LOGIN (ANTI BRUTE FORCE via Redis)
+app.post("/auth/login", async (req, res) => {
+  const ip = req.ip;
+
+  const attempts = await redisClient.get(`login:${ip}`);
+  if (attempts > 10) {
+    return res.status(429).json({ error: "Too many login attempts" });
+  }
+
+  const user = await User.findOne({ username: req.body.username });
+  if (!user) return res.status(404).json({ error: "User not found" });
+
+  const valid = await bcrypt.compare(req.body.password, user.password);
+  if (!valid) {
+    await redisClient.incr(`login:${ip}`);
+    redisClient.expire(`login:${ip}`, 300);
+
+    return res.status(401).json({ error: "Wrong password" });
+  }
+
+  const token = jwt.sign(
+    { id: user._id },
+    JWT_SECRET,
+    { expiresIn: "1h" }
+  );
+
+  res.json({ token });
+});
+
+// ============================================================
+// SSE STREAM (SECURED)
+// ============================================================
+app.get("/intro/stream", auth, (req, res) => {
   res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
   res.flushHeaders();
 
-  // kirim ping tiap 25 detik biar koneksi ga putus
-  const ping = setInterval(() => {
-    try { res.write(": ping\n\n"); } catch { clearInterval(ping); }
-  }, 25000);
-
   sseClients.push(res);
+
+  const ping = setInterval(() => {
+    res.write(": ping\n\n");
+  }, 20000);
 
   req.on("close", () => {
     clearInterval(ping);
@@ -65,56 +211,65 @@ app.get("/intro/stream", (req, res) => {
   });
 });
 
-// 🔥 GET — ambil semua data
-app.get("/intro", async (req, res) => {
-  try {
-    const data = await Intro.find().sort({ _id: -1 });
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: "Gagal ambil data" });
-  }
+// ============================================================
+// CACHE (REDIS)
+// ============================================================
+async function cache(req, res, next) {
+  const key = req.originalUrl;
+  const cached = await redisClient.get(key);
+
+  if (cached) return res.json(JSON.parse(cached));
+
+  res.sendResponse = res.json;
+  res.json = async (body) => {
+    await redisClient.setEx(key, 30, JSON.stringify(body));
+    res.sendResponse(body);
+  };
+
+  next();
+}
+
+// ============================================================
+// API INTRO
+// ============================================================
+
+app.get("/intro", auth, cache, async (req, res) => {
+  const data = await Intro.find().sort({ _id: -1 });
+  res.json(data);
 });
 
-// 🔥 GET count — cek jumlah data (ringan, untuk polling fallback)
-app.get("/intro/count", async (req, res) => {
-  try {
-    const count = await Intro.countDocuments();
-    res.json({ count });
-  } catch {
-    res.status(500).json({ count: 0 });
-  }
+app.get("/intro/count", auth, cache, async (req, res) => {
+  const count = await Intro.countDocuments();
+  res.json({ count });
 });
 
-// 🔥 POST — simpan data baru + broadcast ke semua admin
-app.post("/intro", async (req, res) => {
-  try {
-    const data = new Intro(req.body);
-    await data.save();
+app.post("/intro", auth, async (req, res) => {
+  const data = new Intro(req.body);
+  await data.save();
 
-    // broadcast ke semua admin yang konek SSE
-    broadcastSSE("new_intro", data);
+  broadcastSSE("new_intro", data);
 
-    res.json({ status: "ok", data });
-  } catch (err) {
-    res.status(500).json({ error: "Gagal simpan data" });
-  }
+  res.json({ status: "ok" });
 });
 
-// 🔥 DELETE — hapus data by MongoDB _id
-app.delete("/intro/:id", async (req, res) => {
-  try {
-    await Intro.findByIdAndDelete(req.params.id);
-    broadcastSSE("delete_intro", { _id: req.params.id });
-    res.json({ status: "ok" });
-  } catch (err) {
-    res.status(500).json({ error: "Gagal hapus data" });
-  }
+app.delete("/intro/:id", auth, async (req, res) => {
+  await Intro.findByIdAndDelete(req.params.id);
+
+  broadcastSSE("delete_intro", { _id: req.params.id });
+
+  res.json({ status: "deleted" });
 });
 
+// ============================================================
 // ROOT
+// ============================================================
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server jalan di port ${PORT}`));
+// ============================================================
+// START SERVER
+// ============================================================
+app.listen(3000, () => {
+  console.log("🚀 HARDENED SERVER RUNNING");
+});
