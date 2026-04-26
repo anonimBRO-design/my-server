@@ -300,34 +300,6 @@ input:focus,select:focus{
 .login-icon{font-size:3.5em;text-align:center;margin-bottom:18px}
 .section-title{text-align:center;margin-bottom:32px;color:var(--brown);font-size:1.9em;font-family:'Rajdhani',sans-serif;letter-spacing:1px}
 .divider{height:2px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:22px 0}
-/* REMEMBER ME */
-.remember-row{
-  display:flex;align-items:center;gap:10px;
-  margin-bottom:20px;cursor:pointer;
-  user-select:none;
-}
-.remember-row input[type=checkbox]{
-  width:20px;height:20px;padding:0;
-  accent-color:var(--gold-dark);
-  border-radius:5px;cursor:pointer;
-  flex-shrink:0;
-}
-.remember-row span{font-size:.92em;color:var(--sub);font-weight:600}
-/* DEVICE LOCKED BANNER */
-.locked-banner{
-  background:linear-gradient(135deg,rgba(218,165,32,.18),rgba(184,134,11,.12));
-  border:2px solid var(--border);border-radius:14px;
-  padding:22px 20px;text-align:center;margin-bottom:20px;
-}
-.locked-banner .lock-icon{font-size:2.4em;margin-bottom:8px}
-.locked-banner h3{color:var(--brown);font-family:'Rajdhani',sans-serif;font-size:1.2em;margin-bottom:6px}
-.locked-banner p{color:var(--sub);font-size:.88em;line-height:1.5}
-/* NEW ITEM ANIMATION */
-@keyframes slideIn{
-  from{opacity:0;transform:translateY(-20px) scale(.97)}
-  to{opacity:1;transform:translateY(0) scale(1)}
-}
-.intro-item.new-item{animation:slideIn .5s cubic-bezier(.4,0,.2,1)}
 </style>
 </head>
 <body>
@@ -375,10 +347,6 @@ input:focus,select:focus{
           <label>Username</label>
           <input type="text" id="loginUserName" placeholder="Masukkan username" autocomplete="off">
         </div>
-        <label class="remember-row">
-          <input type="checkbox" id="rememberUser">
-          <span>🔖 Ingat Saya di perangkat ini</span>
-        </label>
         <button class="btn" onclick="doLoginUser()">MASUK</button>
       </div>
     </div>
@@ -397,10 +365,6 @@ input:focus,select:focus{
           <label>Password</label>
           <input type="password" id="loginAdminPass" placeholder="Password admin">
         </div>
-        <label class="remember-row">
-          <input type="checkbox" id="rememberAdmin">
-          <span>🔖 Ingat Saya di perangkat ini</span>
-        </label>
         <button class="btn" onclick="doLoginAdmin()">LOGIN ADMIN</button>
       </div>
     </div>
@@ -509,34 +473,19 @@ const SPAM_LIMIT_MS = 60 * 60 * 1000; // 1 jam
 // ============ STATE ============
 let allData = [];
 let currentUser = null;
+let refreshInterval = null;
 let pendingDeleteId = null;
 let audioCtx = null;
-let sseSource = null;
-
-// ============ DEVICE FINGERPRINT (1 device 1 form) ============
-function getDeviceId() {
-  const raw = [
-    navigator.userAgent,
-    screen.width + 'x' + screen.height,
-    screen.colorDepth,
-    Intl.DateTimeFormat().resolvedOptions().timeZone,
-    navigator.language,
-    navigator.hardwareConcurrency || 0
-  ].join('|');
-  let h = 0;
-  for (let i = 0; i < raw.length; i++) h = (Math.imul(31, h) + raw.charCodeAt(i)) | 0;
-  return 'dev_' + Math.abs(h).toString(36);
-}
-const DEVICE_ID = getDeviceId();
-const DEVICE_INTRO_KEY = `ff_device_done_${DEVICE_ID}`;
 
 // ============ THEME ============
 const themeBtn = document.getElementById('themeBtn');
 const savedTheme = localStorage.getItem('ff_theme') || 'light';
 document.documentElement.setAttribute('data-theme', savedTheme);
 themeBtn.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+
 themeBtn.onclick = () => {
-  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('ff_theme', next);
   themeBtn.textContent = next === 'dark' ? '☀️' : '🌙';
@@ -554,14 +503,14 @@ function playSound(type) {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain); gain.connect(ctx.destination);
-    const cfg = {
-      click:   { freq:600, type:'sine',     dur:.08, vol:.12 },
-      success: { freq:880, type:'triangle', dur:.28, vol:.18 },
-      error:   { freq:220, type:'sawtooth', dur:.28, vol:.15 },
-      delete:  { freq:350, type:'square',   dur:.22, vol:.12 },
-      login:   { freq:740, type:'triangle', dur:.35, vol:.18 },
+    const configs = {
+      click:   { freq: 600, type: 'sine',     dur: 0.08, vol: 0.12 },
+      success: { freq: 880, type: 'triangle', dur: 0.28, vol: 0.18 },
+      error:   { freq: 220, type: 'sawtooth', dur: 0.28, vol: 0.15 },
+      delete:  { freq: 350, type: 'square',   dur: 0.22, vol: 0.12 },
+      login:   { freq: 740, type: 'triangle', dur: 0.35, vol: 0.18 },
     };
-    const c = cfg[type] || cfg.click;
+    const c = configs[type] || configs.click;
     osc.type = c.type; osc.frequency.value = c.freq;
     gain.gain.setValueAtTime(c.vol, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + c.dur);
@@ -577,7 +526,7 @@ function showToast(msg, type='info') {
   t.textContent = msg;
   clearTimeout(toastTimer);
   setTimeout(() => t.classList.add('show'), 10);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
 }
 
 // ============ MODAL ============
@@ -594,6 +543,13 @@ function showSection(id) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
+function switchTab(id, el) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  showSection(id);
+  if (id === 'adminSection') loadData();
+  playSound('click');
+}
 
 // ============ ROLE SELECT ============
 function selectRole(role) {
@@ -605,36 +561,17 @@ function backToRole() {
   showSection('loginSection');
 }
 
-// ============ REMEMBER ME — auto login on load ============
-function checkAutoLogin() {
-  const saved = localStorage.getItem('ff_remember');
-  if (!saved) return;
-  try {
-    const { role, user } = JSON.parse(saved);
-    if (role === 'admin' && user === ADMIN_USER) {
-      enterAdmin();
-    } else if (role === 'user' && user) {
-      enterUser(user);
-    }
-  } catch { localStorage.removeItem('ff_remember'); }
-}
-
 // ============ LOGIN USER ============
 function doLoginUser() {
   playSound('click');
   const user = document.getElementById('loginUserName').value.trim();
   if (!user) { showToast('❌ Username kosong!','error'); playSound('error'); return; }
-  const remember = document.getElementById('rememberUser').checked;
-  if (remember) localStorage.setItem('ff_remember', JSON.stringify({ role:'user', user }));
-  enterUser(user);
-}
-
-function enterUser(user) {
   currentUser = user;
+  document.getElementById('navTabs').style.display = 'none'; // user tidak lihat tab admin
   showSection('introSection');
+  checkSpam(user);
   playSound('login');
-  showToast(`✅ Halo, ${user}! Silakan intro.`, 'success');
-  checkDeviceLocked();
+  showToast(`✅ Halo, ${user}! Silakan intro.`,'success');
 }
 
 // ============ LOGIN ADMIN ============
@@ -643,40 +580,31 @@ function doLoginAdmin() {
   const user = document.getElementById('loginAdminUser').value.trim();
   const pass = document.getElementById('loginAdminPass').value.trim();
   if (user === ADMIN_USER && pass === ADMIN_PASS) {
-    const remember = document.getElementById('rememberAdmin').checked;
-    if (remember) localStorage.setItem('ff_remember', JSON.stringify({ role:'admin', user }));
-    enterAdmin();
+    currentUser = 'admin';
+    document.getElementById('navTabs').style.display = 'none'; // admin langsung ke panel
+    showSection('adminSection');
+    loadData(); startRealtime();
+    playSound('login');
+    showToast('✅ Login admin berhasil!','success');
   } else {
     showToast('❌ Username atau password salah!','error'); playSound('error');
   }
 }
 
-function enterAdmin() {
-  currentUser = 'admin';
-  showSection('adminSection');
-  loadData();
-  startSSE();
-  playSound('login');
-  showToast('✅ Login admin berhasil!','success');
-}
-
-// ============ 1 DEVICE 1 FORM ============
-function checkDeviceLocked() {
-  const done = localStorage.getItem(DEVICE_INTRO_KEY);
+// ============ SPAM GUARD ============
+function checkSpam(user) {
+  const key = `ff_intro_${user}`;
+  const last = localStorage.getItem(key);
   const info = document.getElementById('spamInfo');
-  const btn = document.querySelector('#introSection .btn');
-
-  if (done) {
-    // Tampilkan banner locked, sembunyikan form
-    document.querySelectorAll('#introSection input').forEach(i => { i.disabled = true; i.style.opacity = '.5'; });
-    if (btn) { btn.disabled = true; btn.style.opacity = '.5'; btn.textContent = '✅ Sudah Intro'; }
-    info.style.display = 'block';
-    info.innerHTML = `🔒 <strong>Perangkat ini sudah pernah mengisi form intro.</strong><br><span style="font-size:.85em">Hanya bisa 1 kali per perangkat.</span>`;
-    return true;
+  if (last) {
+    const elapsed = Date.now() - parseInt(last);
+    if (elapsed < SPAM_LIMIT_MS) {
+      const remaining = Math.ceil((SPAM_LIMIT_MS - elapsed) / 60000);
+      info.style.display = 'block';
+      info.textContent = `⏳ Kamu sudah intro. Bisa intro lagi dalam ${remaining} menit.`;
+      return true;
+    }
   }
-  // Reset jika belum
-  document.querySelectorAll('#introSection input').forEach(i => { i.disabled = false; i.style.opacity = '1'; });
-  if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.textContent = '🚀 INTRO SEKARANG'; }
   info.style.display = 'none';
   return false;
 }
@@ -684,75 +612,40 @@ function checkDeviceLocked() {
 // ============ INTRO ============
 function doIntro() {
   playSound('click');
-  if (checkDeviceLocked()) {
-    showToast('🔒 Perangkat ini sudah pernah intro!','error'); playSound('error'); return;
+  const ffid    = document.getElementById('ffId').value.trim();
+  const ingame  = document.getElementById('ingame').value.trim();
+  const realname= document.getElementById('realname').value.trim();
+  const level   = document.getElementById('level').value.trim();
+  const age     = parseInt(document.getElementById('age').value);
+  const city    = document.getElementById('city').value.trim();
+
+  if (!/^\d{8,12}$/.test(ffid))          { showToast('❌ ID FF harus 8–12 digit angka!','error');playSound('error');return; }
+  if (ingame.length<2||ingame.length>12)  { showToast('❌ Nama IG 2–12 karakter!','error');playSound('error');return; }
+  if (!realname||!level||!age||!city)     { showToast('❌ Isi semua field!','error');playSound('error');return; }
+  if (age<10||age>60)                     { showToast('❌ Usia 10–60 tahun!','error');playSound('error');return; }
+
+  if (checkSpam(currentUser)) {
+    showToast('⏳ Terlalu cepat! Tunggu dulu.','error'); playSound('error'); return;
   }
 
-  const ffid     = document.getElementById('ffId').value.trim();
-  const ingame   = document.getElementById('ingame').value.trim();
-  const realname = document.getElementById('realname').value.trim();
-  const level    = document.getElementById('level').value.trim();
-  const age      = parseInt(document.getElementById('age').value);
-  const city     = document.getElementById('city').value.trim();
-
-  if (!/^\d{8,12}$/.test(ffid))         { showToast('❌ ID FF harus 8–12 digit angka!','error');playSound('error');return; }
-  if (ingame.length<2||ingame.length>12) { showToast('❌ Nama IG 2–12 karakter!','error');playSound('error');return; }
-  if (!realname||!level||!age||!city)    { showToast('❌ Isi semua field!','error');playSound('error');return; }
-  if (age<10||age>60)                    { showToast('❌ Usia 10–60 tahun!','error');playSound('error');return; }
-
   const newData = {
-    ffId: ffid, namaInGame: ingame, namaReal: realname,
+    id: Date.now(), ffId: ffid,
+    namaInGame: ingame, namaReal: realname,
     levelAkun: parseInt(level), usia: age, kota: city,
     tanggal: new Date().toLocaleDateString('id-ID'),
     waktu: new Date().toLocaleTimeString('id-ID')
   };
 
-  fetch(API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(newData) })
+  fetch(API, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(newData) })
     .then(r => r.json())
     .then(() => {
-      // Kunci device ini selamanya
-      localStorage.setItem(DEVICE_INTRO_KEY, Date.now().toString());
+      localStorage.setItem(`ff_intro_${currentUser}`, Date.now());
       showToast('✅ Intro berhasil dikirim!','success'); playSound('success');
-      checkDeviceLocked(); // update UI jadi locked
+      document.querySelectorAll('#introSection input').forEach(i => i.value='');
+      document.getElementById('spamInfo').style.display = 'none';
+      checkSpam(currentUser);
     })
     .catch(() => { showToast('❌ Gagal kirim ke server','error'); playSound('error'); });
-}
-
-// ============ SSE REALTIME (admin) ============
-function startSSE() {
-  if (sseSource) sseSource.close();
-
-  sseSource = new EventSource(`${API}/stream`);
-
-  // Event: data baru masuk
-  sseSource.addEventListener('new_intro', e => {
-    const item = JSON.parse(e.data);
-    // hindari duplikat
-    if (!allData.find(d => d._id === item._id)) {
-      allData.unshift(item);
-      updateStats();
-      renderList();
-      populateCityFilter();
-      // animasi card pertama
-      const el = document.getElementById(`item-${item._id}`);
-      if (el) el.classList.add('new-item');
-      showToast(`🆕 Intro baru: ${item.namaInGame}`, 'success');
-      playSound('success');
-    }
-  });
-
-  // Event: data dihapus dari device lain
-  sseSource.addEventListener('delete_intro', e => {
-    const { _id } = JSON.parse(e.data);
-    allData = allData.filter(d => d._id !== _id);
-    updateStats(); renderList(); populateCityFilter();
-  });
-
-  sseSource.onerror = () => {
-    // SSE putus, coba reconnect otomatis setelah 5 detik
-    sseSource.close();
-    setTimeout(() => { if (currentUser === 'admin') startSSE(); }, 5000);
-  };
 }
 
 // ============ LOAD DATA ============
@@ -760,22 +653,23 @@ function loadData() {
   fetch(API)
     .then(r => r.json())
     .then(data => { allData = data; updateStats(); renderList(); populateCityFilter(); })
-    .catch(() => showToast('⚠️ Gagal ambil data','error'));
+    .catch(() => { showToast('⚠️ Gagal ambil data','error'); });
+}
+
+// ============ REALTIME ============
+function startRealtime() {
+  if (refreshInterval) clearInterval(refreshInterval);
+  refreshInterval = setInterval(() => { if (currentUser === 'admin') loadData(); }, 10000);
 }
 
 // ============ STATS ============
 function updateStats() {
   document.getElementById('stTotal').textContent = allData.length;
-  if (!allData.length) {
-    document.getElementById('stAvgAge').textContent = '-';
-    document.getElementById('stAvgLvl').textContent = '-';
-    document.getElementById('stTopCity').textContent = '-';
-    return;
-  }
+  if (!allData.length) return;
   const avgAge = (allData.reduce((a,b)=>a+(b.usia||0),0)/allData.length).toFixed(1);
   const avgLvl = (allData.reduce((a,b)=>a+(b.levelAkun||0),0)/allData.length).toFixed(0);
   const cityCount = {};
-  allData.forEach(d => { cityCount[d.kota] = (cityCount[d.kota]||0)+1; });
+  allData.forEach(d=>{ cityCount[d.kota]=(cityCount[d.kota]||0)+1; });
   const topCity = Object.entries(cityCount).sort((a,b)=>b[1]-a[1])[0]?.[0] || '-';
   document.getElementById('stAvgAge').textContent = avgAge;
   document.getElementById('stAvgLvl').textContent = 'Lv'+avgLvl;
@@ -797,7 +691,7 @@ function renderList() {
   const fCity = document.getElementById('filterCity').value;
   const fLvl = document.getElementById('filterLevel').value;
 
-  const filtered = allData.filter(d => {
+  let filtered = allData.filter(d => {
     const match = !q || [d.namaInGame, d.namaReal, d.ffId, d.kota].some(v => String(v).toLowerCase().includes(q));
     const cityOk = !fCity || d.kota === fCity;
     let lvlOk = true;
@@ -808,11 +702,13 @@ function renderList() {
   });
 
   const list = document.getElementById('dataList');
-  if (!filtered.length) { list.innerHTML = '<div class="empty">📭 Tidak ada data ditemukan</div>'; return; }
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty">📭 Tidak ada data ditemukan</div>'; return;
+  }
 
   list.innerHTML = filtered.map(item => `
-    <div class="intro-item" id="item-${item._id}">
-      <button class="delete-btn" onclick="openModal('${item._id}','${escHtml(item.namaInGame)}')" title="Hapus">🗑️</button>
+    <div class="intro-item" id="item-${item.id}">
+      <button class="delete-btn" onclick="openModal(${item.id},'${escHtml(item.namaInGame)}')" title="Hapus">🗑️</button>
       <div class="player-name">⚔️ ${escHtml(item.namaInGame)} <span style="font-size:.75em;opacity:.7">(${escHtml(item.namaReal)})</span></div>
       <div class="player-info">
         <div class="info-item"><div class="info-label">ID FF</div><div class="info-value">${escHtml(String(item.ffId))}</div></div>
@@ -835,29 +731,32 @@ function resetFilter() {
 // ============ DELETE ============
 function confirmDelete() {
   if (!pendingDeleteId) return;
-  const id = pendingDeleteId;
-  fetch(`${API}/${id}`, { method:'DELETE' })
-    .then(() => {
-      allData = allData.filter(d => d._id !== id);
+  fetch(`${API}/${pendingDeleteId}`, { method:'DELETE' })
+    .then(r => {
+      if (!r.ok) throw new Error();
+      allData = allData.filter(d => d.id !== pendingDeleteId);
       updateStats(); renderList(); populateCityFilter();
       showToast('🗑️ Data berhasil dihapus','success'); playSound('delete');
     })
-    .catch(() => { showToast('❌ Gagal hapus data','error'); playSound('error'); });
+    .catch(() => {
+      // fallback: hapus dari local state jika server tidak support DELETE
+      allData = allData.filter(d => d.id !== pendingDeleteId);
+      updateStats(); renderList(); populateCityFilter();
+      showToast('🗑️ Data dihapus (lokal)','info'); playSound('delete');
+    });
   pendingDeleteId = null;
 }
 
 // ============ LOGOUT ============
 function doLogout() {
   playSound('click');
-  if (sseSource) { sseSource.close(); sseSource = null; }
-  localStorage.removeItem('ff_remember');
   currentUser = null;
+  clearInterval(refreshInterval);
   allData = [];
+  document.getElementById('navTabs').style.display = 'none';
   document.getElementById('loginUserName').value = '';
   document.getElementById('loginAdminUser').value = '';
   document.getElementById('loginAdminPass').value = '';
-  document.getElementById('rememberUser').checked = false;
-  document.getElementById('rememberAdmin').checked = false;
   showSection('loginSection');
   showToast('👋 Logout berhasil','info');
 }
@@ -867,13 +766,10 @@ function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Enter key
+// Enter key on login
 document.getElementById('loginAdminPass').addEventListener('keydown', e => { if(e.key==='Enter') doLoginAdmin(); });
 document.getElementById('loginAdminUser').addEventListener('keydown', e => { if(e.key==='Enter') doLoginAdmin(); });
 document.getElementById('loginUserName').addEventListener('keydown', e => { if(e.key==='Enter') doLoginUser(); });
-
-// ============ AUTO LOGIN ON PAGE LOAD ============
-checkAutoLogin();
 </script>
 </body>
 </html>
