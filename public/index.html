@@ -190,6 +190,9 @@
 const ADMIN_USER = 'ADMIN12345';
 const ADMIN_PASS = 'L';
 
+// 🔥 GANTI DENGAN URL RAILWAY LU
+const API = "https://introff.up.railway.app/intro";
+
 function showSection(sectionId) {
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     document.getElementById(sectionId).classList.add('active');
@@ -237,7 +240,7 @@ function doIntro() {
         waktu: new Date().toLocaleTimeString('id-ID')
     };
 
-    fetch("introff.up.railway.app"), {
+    fetch(API, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -248,12 +251,16 @@ function doIntro() {
     .then(() => {
         alert("✅ INTRO BERHASIL!");
         document.querySelectorAll('#introSection input').forEach(i => i.value = '');
+    })
+    .catch(err => {
+        alert("❌ Gagal kirim ke server");
+        console.error(err);
     });
 }
 
 // 🔥 AMBIL DATA DARI SERVER
 function loadData() {
-    fetch(introff.up.railway.app)
+    fetch(API)
     .then(res => res.json())
     .then(data => {
         document.getElementById('totalCount').textContent = data.length;
@@ -281,6 +288,9 @@ function loadData() {
             `;
             list.appendChild(div);
         });
+    })
+    .catch(err => {
+        console.error("Gagal ambil data:", err);
     });
 }
 
