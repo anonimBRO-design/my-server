@@ -12,8 +12,8 @@ app.post("/intro", (req, res) => {
     res.json({ status: "ok" });
 });
 
-app.get("/intro", (req, res) => {
-    res.json(data);
+app.get("/", (req, res) => {
+    res.send("SERVER INTRO FF AKTIF 🔥");
 });
 
 const PORT = process.env.PORT || 3000;
