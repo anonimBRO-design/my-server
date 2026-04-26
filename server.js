@@ -10,7 +10,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 // 🔥 CONNECT DATABASE
-mongoose.connect("mongodb+srv://axiooxjkt48pro_db_user:<1r9CkEKNyF5OjyuO>@cluster0.qw4wm0l.mongodb.net/?appName=Cluster0")
+mongoose.connect("mongodb+srv://axiooxjkt48pro_db_user:LwEII86ghHvHxhJ0@intro.ifepmi9.mongodb.net/introDB")
 .then(() => console.log("MongoDB Connected"))
 .catch(err => console.log(err));
 
