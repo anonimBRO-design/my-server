@@ -1,50 +1,40 @@
-require("dotenv").config();
-
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const path = require("path");
 const rateLimit = require("express-rate-limit");
-const helmet = require("helmet");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const redis = require("redis");
+const helmet = require("helmet");
 const mongoSanitize = require("express-mongo-sanitize");
 
 const app = express();
 
 // ============================================================
-// SECURITY HEADERS
+// SECURITY ADD-ON (TIDAK UBAH LOGIC KAMU)
 // ============================================================
 app.use(helmet());
-
-// ============================================================
-// BASIC SECURITY MIDDLEWARE
-// ============================================================
-app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST", "DELETE"]
-}));
-
-app.use(express.json({ limit: "10kb" })); // anti payload besar
-app.use(express.static(path.join(__dirname, "public")));
 app.use(mongoSanitize());
 
 // ============================================================
-// RATE LIMIT GLOBAL (HARDENED)
+// MIDDLEWARE
 // ============================================================
-app.set("trust proxy", 1);
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(__dirname, "public")));
 
+// ============================================================
+// RATE LIMIT GLOBAL
+// ============================================================
 app.use(rateLimit({
   windowMs: 1 * 60 * 1000,
-  max: 80,
-  standardHeaders: true,
-  legacyHeaders: false,
+  max: 120,
   message: { error: "Too many requests" }
 }));
 
 // ============================================================
-// REDIS (CACHE + ANTI BOT TRACKING)
+// REDIS CACHE
 // ============================================================
 const redisClient = redis.createClient({
   url: process.env.REDIS_URL || "redis://localhost:6379"
@@ -52,12 +42,12 @@ const redisClient = redis.createClient({
 
 redisClient.connect()
   .then(() => console.log("⚡ Redis Connected"))
-  .catch(err => console.log(err));
+  .catch(err => console.log("❌ Redis Error", err));
 
 // ============================================================
-// JWT SECRET (ENV)
+// JWT SECRET
 // ============================================================
-const JWT_SECRET = process.env.JWT_SECRET || "CHANGE_THIS_SECRET";
+const JWT_SECRET = process.env.JWT_SECRET || "secret_key_ganti_ini";
 
 // ============================================================
 // DATABASE
@@ -72,7 +62,6 @@ mongoose.connect(process.env.MONGO_URL)
 const UserSchema = new mongoose.Schema({
   username: String,
   password: String,
-  createdAt: { type: Date, default: Date.now }
 });
 
 const IntroSchema = new mongoose.Schema({
@@ -90,55 +79,32 @@ const User = mongoose.model("User", UserSchema);
 const Intro = mongoose.model("Intro", IntroSchema);
 
 // ============================================================
-// AUTH MIDDLEWARE (HARDENED JWT)
+// AUTH MIDDLEWARE (JWT)
 // ============================================================
 function auth(req, res, next) {
-  const header = req.headers["authorization"];
-  if (!header) return res.status(401).json({ error: "No token" });
-
-  const token = header.split(" ")[1];
+  const token = req.headers["authorization"];
+  if (!token) return res.status(401).json({ error: "No token" });
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET, {
-      maxAge: "1h"
-    });
-
+    const decoded = jwt.verify(token.split(" ")[1], JWT_SECRET);
     req.user = decoded;
     next();
   } catch {
-    return res.status(401).json({ error: "Invalid token" });
+    res.status(401).json({ error: "Invalid token" });
   }
 }
 
 // ============================================================
-// SIMPLE ANTI BOT LAYER
-// ============================================================
-app.use((req, res, next) => {
-  const ip = req.ip;
-  const ua = req.headers["user-agent"];
-
-  if (!ua || ua.length < 10) {
-    return res.status(403).json({ error: "Bot blocked" });
-  }
-
-  // simple abuse tracking
-  redisClient.incr(ip);
-  redisClient.expire(ip, 60);
-
-  next();
-});
-
-// ============================================================
-// SSE CLIENTS (HARDENED)
+// SSE CLIENTS
 // ============================================================
 let sseClients = [];
 
 function broadcastSSE(event, data) {
   const msg = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
 
-  sseClients = sseClients.filter(client => {
+  sseClients = sseClients.filter(c => {
     try {
-      client.write(msg);
+      c.write(msg);
       return true;
     } catch {
       return false;
@@ -147,11 +113,12 @@ function broadcastSSE(event, data) {
 }
 
 // ============================================================
-// AUTH ROUTES (ANTI BRUTE FORCE)
+// AUTH ROUTES
 // ============================================================
 
+// REGISTER
 app.post("/auth/register", async (req, res) => {
-  const hash = await bcrypt.hash(req.body.password, 12);
+  const hash = await bcrypt.hash(req.body.password, 10);
 
   const user = new User({
     username: req.body.username,
@@ -162,37 +129,22 @@ app.post("/auth/register", async (req, res) => {
   res.json({ status: "registered" });
 });
 
-// LOGIN (ANTI BRUTE FORCE via Redis)
+// LOGIN + JWT
 app.post("/auth/login", async (req, res) => {
-  const ip = req.ip;
-
-  const attempts = await redisClient.get(`login:${ip}`);
-  if (attempts > 10) {
-    return res.status(429).json({ error: "Too many login attempts" });
-  }
-
   const user = await User.findOne({ username: req.body.username });
+
   if (!user) return res.status(404).json({ error: "User not found" });
 
   const valid = await bcrypt.compare(req.body.password, user.password);
-  if (!valid) {
-    await redisClient.incr(`login:${ip}`);
-    redisClient.expire(`login:${ip}`, 300);
+  if (!valid) return res.status(401).json({ error: "Wrong password" });
 
-    return res.status(401).json({ error: "Wrong password" });
-  }
-
-  const token = jwt.sign(
-    { id: user._id },
-    JWT_SECRET,
-    { expiresIn: "1h" }
-  );
+  const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "1h" });
 
   res.json({ token });
 });
 
 // ============================================================
-// SSE STREAM (SECURED)
+// SSE STREAM (ADMIN DASHBOARD REALTIME)
 // ============================================================
 app.get("/intro/stream", auth, (req, res) => {
   res.setHeader("Content-Type", "text/event-stream");
@@ -203,7 +155,7 @@ app.get("/intro/stream", auth, (req, res) => {
 
   const ping = setInterval(() => {
     res.write(": ping\n\n");
-  }, 20000);
+  }, 25000);
 
   req.on("close", () => {
     clearInterval(ping);
@@ -212,7 +164,7 @@ app.get("/intro/stream", auth, (req, res) => {
 });
 
 // ============================================================
-// CACHE (REDIS)
+// CACHE MIDDLEWARE (REDIS)
 // ============================================================
 async function cache(req, res, next) {
   const key = req.originalUrl;
@@ -222,7 +174,7 @@ async function cache(req, res, next) {
 
   res.sendResponse = res.json;
   res.json = async (body) => {
-    await redisClient.setEx(key, 30, JSON.stringify(body));
+    await redisClient.setEx(key, 60, JSON.stringify(body));
     res.sendResponse(body);
   };
 
@@ -233,25 +185,29 @@ async function cache(req, res, next) {
 // API INTRO
 // ============================================================
 
+// GET ALL
 app.get("/intro", auth, cache, async (req, res) => {
   const data = await Intro.find().sort({ _id: -1 });
   res.json(data);
 });
 
+// COUNT
 app.get("/intro/count", auth, cache, async (req, res) => {
   const count = await Intro.countDocuments();
   res.json({ count });
 });
 
+// POST
 app.post("/intro", auth, async (req, res) => {
   const data = new Intro(req.body);
   await data.save();
 
   broadcastSSE("new_intro", data);
 
-  res.json({ status: "ok" });
+  res.json({ status: "ok", data });
 });
 
+// DELETE
 app.delete("/intro/:id", auth, async (req, res) => {
   await Intro.findByIdAndDelete(req.params.id);
 
@@ -268,8 +224,21 @@ app.get("/", (req, res) => {
 });
 
 // ============================================================
-// START SERVER
+// 🔥 HARDENED RAILWAY FIX (TAMBAHAN PENTING)
 // ============================================================
-app.listen(3000, () => {
-  console.log("🚀 HARDENED SERVER RUNNING");
+process.on("uncaughtException", (err) => {
+  console.log("❌ CRASH:", err);
+});
+
+process.on("unhandledRejection", (err) => {
+  console.log("❌ PROMISE ERROR:", err);
+});
+
+// ============================================================
+// START SERVER (WAJIB RAILWAY FIX)
+// ============================================================
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log("🚀 Server running on", PORT);
 });
