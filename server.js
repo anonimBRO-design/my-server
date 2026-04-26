@@ -1,17 +1,22 @@
-const express = require('express')
-const path = require('path')
-const app = express()
+const express = require("express");
+const cors = require("cors");
 
-// serve folder public
-app.use(express.static(path.join(__dirname, 'public')))
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-// route root wajib
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/index.html'))
-})
+let data = [];
 
-// port railway
-const PORT = process.env.PORT || 3000
+app.post("/intro", (req, res) => {
+    data.unshift(req.body);
+    res.json({ status: "ok" });
+});
+
+app.get("/intro", (req, res) => {
+    res.json(data);
+});
+
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log('Server jalan di ' + PORT)
-})
+    console.log("Server jalan di " + PORT);
+});
