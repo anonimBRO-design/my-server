@@ -1,28 +1,47 @@
 const express = require("express");
 const cors = require("cors");
+const mongoose = require("mongoose");
 const path = require("path");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
-
-// 🔥 INI YANG BIKIN HTML LU KELOAD
 app.use(express.static(path.join(__dirname, "public")));
 
-let data = [];
+// 🔥 CONNECT DATABASE
+mongoose.connect("mongodb+srv://axiooxjkt48pro_db_user:<1r9CkEKNyF5OjyuO>@cluster0.qw4wm0l.mongodb.net/?appName=Cluster0")
+.then(() => console.log("MongoDB Connected"))
+.catch(err => console.log(err));
 
-// 🔥 API
-app.post("/intro", (req, res) => {
-    data.unshift(req.body);
+// 🔥 SCHEMA
+const IntroSchema = new mongoose.Schema({
+    ffId: String,
+    namaInGame: String,
+    namaReal: String,
+    levelAkun: String,
+    usia: Number,
+    kota: String,
+    tanggal: String,
+    waktu: String
+});
+
+const Intro = mongoose.model("Intro", IntroSchema);
+
+// 🔥 POST
+app.post("/intro", async (req, res) => {
+    const data = new Intro(req.body);
+    await data.save();
     res.json({ status: "ok" });
 });
 
-app.get("/intro", (req, res) => {
+// 🔥 GET
+app.get("/intro", async (req, res) => {
+    const data = await Intro.find().sort({ _id: -1 });
     res.json(data);
 });
 
-// 🔥 ROOT → TAMPILIN HTML
+// ROOT
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index intro.html"));
 });

@@ -272,29 +272,6 @@ input:focus,select:focus{
 ::-webkit-scrollbar{width:6px}
 ::-webkit-scrollbar-track{background:var(--cream2)}
 ::-webkit-scrollbar-thumb{background:var(--gold);border-radius:3px}
-/* ROLE SELECTOR */
-.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:8px}
-.role-card{
-  background:var(--card-bg);
-  border:2px solid var(--border);
-  border-radius:18px;padding:32px 16px;
-  text-align:center;cursor:pointer;
-  transition:all .3s;
-  box-shadow:0 8px 24px var(--shadow);
-  font-family:'Exo 2',sans-serif;
-}
-.role-card:hover{transform:translateY(-6px);box-shadow:0 16px 36px var(--shadow);border-color:var(--gold-dark)}
-.role-icon{font-size:2.8em;margin-bottom:12px}
-.role-label{font-size:1.25em;font-weight:700;color:var(--brown);font-family:'Rajdhani',sans-serif;letter-spacing:.5px}
-.role-desc{font-size:.82em;color:var(--sub);margin-top:5px}
-.back-btn{
-  background:none;border:1.5px solid var(--border);
-  color:var(--sub);border-radius:9px;padding:7px 16px;
-  font-size:.88em;cursor:pointer;margin-bottom:22px;
-  font-family:'Exo 2',sans-serif;font-weight:600;
-  transition:all .25s;
-}
-.back-btn:hover{background:rgba(218,165,32,.12);color:var(--brown)}
 /* login card center */
 .login-card{max-width:420px;margin:0 auto}
 .login-icon{font-size:3.5em;text-align:center;margin-bottom:18px}
@@ -317,55 +294,20 @@ input:focus,select:focus{
   </div>
 
   <div class="content">
-    <!-- PILIH ROLE -->
+    <!-- LOGIN -->
     <div id="loginSection" class="section active">
       <div class="login-card">
-        <div class="login-icon">🎮</div>
-        <div class="section-title">Masuk Sebagai</div>
-        <div class="role-grid">
-          <button class="role-card" onclick="selectRole('user')">
-            <div class="role-icon">👤</div>
-            <div class="role-label">User</div>
-            <div class="role-desc">Daftar intro FF kamu</div>
-          </button>
-          <button class="role-card" onclick="selectRole('admin')">
-            <div class="role-icon">🔐</div>
-            <div class="role-label">Admin</div>
-            <div class="role-desc">Kelola semua data</div>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- LOGIN USER -->
-    <div id="loginUserSection" class="section">
-      <div class="login-card">
-        <button class="back-btn" onclick="backToRole()">← Kembali</button>
-        <div class="login-icon">👤</div>
-        <div class="section-title">Login User</div>
-        <div class="form-group">
-          <label>Username</label>
-          <input type="text" id="loginUserName" placeholder="Masukkan username" autocomplete="off">
-        </div>
-        <button class="btn" onclick="doLoginUser()">MASUK</button>
-      </div>
-    </div>
-
-    <!-- LOGIN ADMIN -->
-    <div id="loginAdminSection" class="section">
-      <div class="login-card">
-        <button class="back-btn" onclick="backToRole()">← Kembali</button>
         <div class="login-icon">🔐</div>
-        <div class="section-title">Login Admin</div>
+        <div class="section-title">Login</div>
         <div class="form-group">
           <label>Username</label>
-          <input type="text" id="loginAdminUser" placeholder="Username admin" autocomplete="off">
+          <input type="text" id="loginUser" placeholder="Masukkan username" autocomplete="off">
         </div>
         <div class="form-group">
           <label>Password</label>
-          <input type="password" id="loginAdminPass" placeholder="Password admin">
+          <input type="password" id="loginPass" placeholder="Masukkan password">
         </div>
-        <button class="btn" onclick="doLoginAdmin()">LOGIN ADMIN</button>
+        <button class="btn" onclick="doLogin()">LOGIN</button>
       </div>
     </div>
 
@@ -465,7 +407,7 @@ input:focus,select:focus{
 
 <script>
 // ============ CONFIG ============
-const ADMIN_USER = 'lawliet';
+const ADMIN_USER = 'ADMIN12345';
 const ADMIN_PASS = 'L';
 const API = "https://introff.up.railway.app/intro";
 const SPAM_LIMIT_MS = 60 * 60 * 1000; // 1 jam
@@ -551,43 +493,30 @@ function switchTab(id, el) {
   playSound('click');
 }
 
-// ============ ROLE SELECT ============
-function selectRole(role) {
+// ============ LOGIN ============
+function doLogin() {
   playSound('click');
-  showSection(role === 'admin' ? 'loginAdminSection' : 'loginUserSection');
-}
-function backToRole() {
-  playSound('click');
-  showSection('loginSection');
-}
+  const user = document.getElementById('loginUser').value.trim();
+  const pass = document.getElementById('loginPass').value.trim();
+  if (!user) { showToast('❌ Username kosong!', 'error'); playSound('error'); return; }
 
-// ============ LOGIN USER ============
-function doLoginUser() {
-  playSound('click');
-  const user = document.getElementById('loginUserName').value.trim();
-  if (!user) { showToast('❌ Username kosong!','error'); playSound('error'); return; }
-  currentUser = user;
-  document.getElementById('navTabs').style.display = 'none'; // user tidak lihat tab admin
-  showSection('introSection');
-  checkSpam(user);
-  playSound('login');
-  showToast(`✅ Halo, ${user}! Silakan intro.`,'success');
-}
-
-// ============ LOGIN ADMIN ============
-function doLoginAdmin() {
-  playSound('click');
-  const user = document.getElementById('loginAdminUser').value.trim();
-  const pass = document.getElementById('loginAdminPass').value.trim();
   if (user === ADMIN_USER && pass === ADMIN_PASS) {
     currentUser = 'admin';
-    document.getElementById('navTabs').style.display = 'none'; // admin langsung ke panel
+    document.getElementById('navTabs').style.display = 'flex';
     showSection('adminSection');
-    loadData(); startRealtime();
+    loadData();
+    startRealtime();
     playSound('login');
-    showToast('✅ Login admin berhasil!','success');
+    showToast('✅ Login admin berhasil!', 'success');
+  } else if (user) {
+    currentUser = user;
+    document.getElementById('navTabs').style.display = 'flex';
+    showSection('introSection');
+    checkSpam(user);
+    playSound('login');
+    showToast('✅ Login berhasil!', 'success');
   } else {
-    showToast('❌ Username atau password salah!','error'); playSound('error');
+    showToast('❌ Username kosong!', 'error'); playSound('error');
   }
 }
 
@@ -754,9 +683,8 @@ function doLogout() {
   clearInterval(refreshInterval);
   allData = [];
   document.getElementById('navTabs').style.display = 'none';
-  document.getElementById('loginUserName').value = '';
-  document.getElementById('loginAdminUser').value = '';
-  document.getElementById('loginAdminPass').value = '';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
   showSection('loginSection');
   showToast('👋 Logout berhasil','info');
 }
@@ -767,9 +695,8 @@ function escHtml(s) {
 }
 
 // Enter key on login
-document.getElementById('loginAdminPass').addEventListener('keydown', e => { if(e.key==='Enter') doLoginAdmin(); });
-document.getElementById('loginAdminUser').addEventListener('keydown', e => { if(e.key==='Enter') doLoginAdmin(); });
-document.getElementById('loginUserName').addEventListener('keydown', e => { if(e.key==='Enter') doLoginUser(); });
+document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('loginUser').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 </script>
 </body>
 </html>
