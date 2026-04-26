@@ -187,139 +187,116 @@
     </div>
 
     <script>
-        const ADMIN_USER = 'ADMIN12345';
-        const ADMIN_PASS = 'L';
-        let data = JSON.parse(localStorage.getItem('introData')) || [];
+const ADMIN_USER = 'ADMIN12345';
+const ADMIN_PASS = 'L';
 
-        function showSection(sectionId) {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.getElementById(sectionId).classList.add('active');
+// 🔥 GANTI DENGAN URL RAILWAY LU
+const API = "https://introff.up.railway.app/intro";
+
+function showSection(sectionId) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById(sectionId).classList.add('active');
+}
+
+function doLogin() {
+    const user = document.getElementById('loginUser').value.trim();
+    const pass = document.getElementById('loginPass').value.trim();
+
+    if (user === ADMIN_USER && pass === ADMIN_PASS) {
+        showSection('adminSection');
+        loadData();
+        alert('✅ Admin login berhasil!');
+    } else if (user) {
+        showSection('introSection');
+        alert('✅ Login berhasil! Silahkan intro.');
+    } else {
+        alert('❌ Username kosong!');
+    }
+}
+
+// 🔥 KIRIM DATA KE SERVER
+function doIntro() {
+    const ffid = document.getElementById('ffId').value.trim();
+    const ingame = document.getElementById('ingame').value.trim();
+    const realname = document.getElementById('realname').value.trim();
+    const level = document.getElementById('level').value.trim();
+    const age = parseInt(document.getElementById('age').value);
+    const city = document.getElementById('city').value.trim();
+
+    if (!/^\d{8,12}$/.test(ffid)) return alert('❌ ID FF 8-12 digit angka!');
+    if (ingame.length < 2 || ingame.length > 12) return alert('❌ Nama IG 2-12 karakter!');
+    if (!realname || !level || !age || !city) return alert('❌ Isi semua field!');
+    if (age > 60 || age < 10) return alert('❌ Usia 10-60 tahun!');
+
+    const newData = {
+        id: Date.now(),
+        ffId: ffid,
+        namaInGame: ingame,
+        namaReal: realname,
+        levelAkun: level,
+        usia: age,
+        kota: city,
+        tanggal: new Date().toLocaleDateString('id-ID'),
+        waktu: new Date().toLocaleTimeString('id-ID')
+    };
+
+    fetch(API, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(newData)
+    })
+    .then(res => res.json())
+    .then(() => {
+        alert("✅ INTRO BERHASIL!");
+        document.querySelectorAll('#introSection input').forEach(i => i.value = '');
+    })
+    .catch(err => {
+        alert("❌ Gagal kirim ke server");
+        console.error(err);
+    });
+}
+
+// 🔥 AMBIL DATA DARI SERVER
+function loadData() {
+    fetch(API)
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById('totalCount').textContent = data.length;
+
+        const list = document.getElementById('dataList');
+        list.innerHTML = '';
+
+        if (data.length === 0) {
+            list.innerHTML = '<div style="text-align:center;padding:60px;color:#a0522d;font-size:1.3em">Belum ada data intro</div>';
+            return;
         }
 
-        function doLogin() {
-            const user = document.getElementById('loginUser').value.trim();
-            const pass = document.getElementById('loginPass').value.trim();
-
-            if (user === ADMIN_USER && pass === ADMIN_PASS) {
-                showSection('adminSection');
-                loadData();
-                alert('✅ Admin login berhasil!');
-            } else if (user) {
-                showSection('introSection');
-                alert('✅ Login berhasil! Silahkan intro.');
-            } else {
-                alert('❌ Username kosong!');
-            }
-        }
-
-        function doIntro() {
-            const deviceId = localStorage.getItem('deviceId') || 'dev_' + Date.now();
-            localStorage.setItem('deviceId', deviceId);
-
-            if (data.find(d => d.deviceId === deviceId)) {
-                alert('❌ Sudah intro! 1 device = 1 intro');
-                return;
-            }
-
-            const ffid = document.getElementById('ffId').value.trim();
-            const ingame = document.getElementById('ingame').value.trim();
-            const realname = document.getElementById('realname').value.trim();
-            const level = document.getElementById('level').value.trim();
-            const age = parseInt(document.getElementById('age').value);
-            const city = document.getElementById('city').value.trim();
-
-            if (!/^\d{8,12}$/.test(ffid)) return alert('❌ ID FF 8-12 digit angka!');
-            if (ingame.length < 2 || ingame.length > 12) return alert('❌ Nama IG 2-12 karakter!');
-            if (!realname || !level || !age || !city) return alert('❌ Isi semua field!');
-            if (age > 60 || age < 10) return alert('❌ Usia 10-60 tahun!');
-
-            const newData = {
-                id: Date.now(),
-                deviceId: deviceId,
-                ffId: ffid,
-                namaInGame: ingame,
-                namaReal: realname,
-                levelAkun: level,
-                usia: age,
-                kota: city,
-                tanggal: new Date().toLocaleDateString('id-ID'),
-                waktu: new Date().toLocaleTimeString('id-ID')
-            };
-
-            data.unshift(newData);
-            localStorage.setItem('introData', JSON.stringify(data));
-            alert('✅ INTRO BERHASIL! ✨');
-            
-            // Reset form
-            document.querySelectorAll('#introSection input').forEach(input => input.value = '');
-        }
-
-        function loadData() {
-            document.getElementById('totalCount').textContent = data.length;
-            const list = document.getElementById('dataList');
-            list.innerHTML = '';
-
-            if (data.length === 0) {
-                list.innerHTML = '<div style="text-align:center;padding:60px;color:#a0522d;font-size:1.3em">Belum ada data intro</div>';
-                return;
-            }
-
-            data.forEach((item, index) => {
-                const div = document.createElement('div');
-                div.className = 'intro-item';
-                div.innerHTML = `
-                    <button class="delete-btn" onclick="deleteData(${item.id})" title="Hapus">×</button>
-                    <div class="player-name">${item.namaInGame} (${item.namaReal})</div>
-                    <div class="player-info">
-                        <div class="info-item">
-                            <div class="info-label">ID FF</div>
-                            <div class="info-value">${item.ffId}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">Level</div>
-                            <div class="info-value">Lv.${item.levelAkun}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">Usia</div>
-                            <div class="info-value">${item.usia} thn</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">Kota</div>
-                            <div class="info-value">${item.kota}</div>
-                        </div>
-                    </div>
-                    <div class="timestamp">📅 ${item.tanggal} ⏰ ${item.waktu}</div>
-                    <div class="status">✅ VERIFIED</div>
-                `;
-                list.appendChild(div);
-            });
-        }
-
-        function deleteData(id) {
-            if (confirm('Hapus data ini?')) {
-                data = data.filter(item => item.id !== id);
-                localStorage.setItem('introData', JSON.stringify(data));
-                loadData();
-                alert('✅ Data dihapus!');
-            }
-        }
-
-        function doLogout() {
-            showSection('loginSection');
-        }
-
-        // Enter key & auto load
-        document.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && document.getElementById('loginSection').classList.contains('active')) {
-                doLogin();
-            }
+        data.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'intro-item';
+            div.innerHTML = `
+                <div class="player-name">${item.namaInGame} (${item.namaReal})</div>
+                <div class="player-info">
+                    <div class="info-item"><div>ID FF</div><div>${item.ffId}</div></div>
+                    <div class="info-item"><div>Level</div><div>Lv.${item.levelAkun}</div></div>
+                    <div class="info-item"><div>Usia</div><div>${item.usia}</div></div>
+                    <div class="info-item"><div>Kota</div><div>${item.kota}</div></div>
+                </div>
+                <div class="timestamp">📅 ${item.tanggal} ⏰ ${item.waktu}</div>
+            `;
+            list.appendChild(div);
         });
+    })
+    .catch(err => {
+        console.error("Gagal ambil data:", err);
+    });
+}
 
-        window.onload = function() {
-            if (localStorage.getItem('deviceId')) {
-                showSection('introSection');
-            }
-        }
-    </script>
+function doLogout() {
+    showSection('loginSection');
+}
+</script>
 </body>
 </html>
