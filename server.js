@@ -42,13 +42,13 @@ catch { return false; }
 }
 
 // ============================================================
-// 🤖 CHATBOT FIX — Hugging Face (VERSI BENAR)
+// 🤖 CHATBOT FIX — ANTI 500
 // ============================================================
 app.post("/api/chat", async (req, res) => {
 const HF_TOKEN = process.env.HF_TOKEN;
 
 if (!HF_TOKEN) {
-return res.status(500).json({
+return res.json({
 content: [{ type: "text", text: "HF_TOKEN belum diset" }]
 });
 }
@@ -73,7 +73,34 @@ const response = await fetch(
 
 const data = await response.json();
 
-const reply = data?.[0]?.generated_text || "AI tidak merespon";
+// 🔥 HANDLE SEMUA KASUS
+if (!response.ok) {
+  console.log("HF STATUS ERROR:", data);
+  return res.json({
+    content: [
+      { type: "text", text: "AI error (HF API)" }
+    ]
+  });
+}
+
+// kalau model loading / error
+if (data.error) {
+  console.log("HF ERROR:", data.error);
+  return res.json({
+    content: [
+      { type: "text", text: "AI lagi loading... coba lagi bentar" }
+    ]
+  });
+}
+
+// kalau format beda
+let reply = "AI tidak merespon";
+
+if (Array.isArray(data)) {
+  reply = data[0]?.generated_text || reply;
+} else if (data.generated_text) {
+  reply = data.generated_text;
+}
 
 res.json({
   content: [
@@ -83,12 +110,16 @@ res.json({
 ```
 
 } catch (err) {
-console.error("CHAT ERROR:", err);
-res.status(500).json({
-content: [
-{ type: "text", text: "Server error" }
-]
+console.error("CHAT ERROR FULL:", err);
+
+```
+res.json({
+  content: [
+    { type: "text", text: "Server error (cek logs)" }
+  ]
 });
+```
+
 }
 });
 
