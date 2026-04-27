@@ -1,0 +1,1484 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intro FF – Golden System</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Exo+2:wght@300;400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --gold: #daa520;
+  --gold-dark: #b8860b;
+  --gold-light: #f0c040;
+  --brown: #8b4513;
+  --brown-light: #a0522d;
+  --cream: #fffaf0;
+  --cream2: #f5f5dc;
+  --bg-grad: linear-gradient(135deg,#b8860b 0%,#daa520 50%,#cd853f 100%);
+  --card-bg: linear-gradient(145deg,#fff8dc,#f0e68c88);
+  --text: #3b1a00;
+  --sub: #a0522d;
+  --border: #daa520;
+  --input-bg: #fffaf0;
+  --shadow: rgba(184,134,11,0.35);
+  --header-bg: linear-gradient(45deg,#b8860b,#daa520,#cd853f);
+  --container-bg: linear-gradient(145deg,#f5f5dc,#d2b48c);
+  --danger: #c0392b;
+  --success: #27ae60;
+  --info: #2980b9;
+  --mod: #8e44ad;
+}
+[data-theme="dark"] {
+  --gold: #ffd700;
+  --gold-dark: #c8a800;
+  --gold-light: #ffe566;
+  --brown: #f4c16e;
+  --brown-light: #d4a55a;
+  --cream: #1a1200;
+  --cream2: #241a00;
+  --bg-grad: linear-gradient(135deg,#1a1200 0%,#2d2000 50%,#1e1500 100%);
+  --card-bg: linear-gradient(145deg,#2a1e00cc,#352800cc);
+  --text: #faeaaa;
+  --sub: #c8a050;
+  --border: #c8a800;
+  --input-bg: #1e1600;
+  --shadow: rgba(255,215,0,0.18);
+  --header-bg: linear-gradient(45deg,#2d2000,#c8a800,#3a2800);
+  --container-bg: linear-gradient(145deg,#1a1200,#2d2000);
+  --danger: #e74c3c;
+  --success: #2ecc71;
+}
+
+/* ===== BASE ===== */
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Exo 2',sans-serif;
+  background:var(--bg-grad);
+  min-height:100vh;padding:20px;
+  transition:background 0.4s;
+}
+.container{
+  max-width:950px;margin:0 auto;
+  background:var(--container-bg);
+  border-radius:28px;
+  box-shadow:0 30px 60px var(--shadow);
+  overflow:hidden;
+  border:2px solid var(--border);
+  transition:background 0.4s;
+}
+
+/* ===== HEADER ===== */
+.header{
+  background:var(--header-bg);
+  color:#fff;padding:36px 40px 28px;
+  text-align:center;position:relative;
+}
+.header h1{
+  font-family:'Rajdhani',sans-serif;
+  font-size:2.7em;font-weight:700;letter-spacing:3px;
+  text-shadow:2px 2px 8px rgba(0,0,0,0.4);
+}
+.header p{font-size:1.1em;opacity:.85;margin-top:6px}
+.theme-btn{
+  position:absolute;top:18px;right:18px;
+  background:rgba(255,255,255,0.15);
+  border:2px solid rgba(255,255,255,0.35);
+  color:#fff;border-radius:50%;
+  width:42px;height:42px;font-size:1.3em;
+  cursor:pointer;transition:all .3s;
+  display:flex;align-items:center;justify-content:center;
+}
+.theme-btn:hover{background:rgba(255,255,255,0.3);transform:rotate(20deg)}
+
+/* ===== NAV TABS ===== */
+.nav-tabs{
+  display:flex;gap:0;border-bottom:3px solid var(--border);
+  background:var(--cream2);
+}
+.nav-tab{
+  flex:1;padding:14px 8px;text-align:center;
+  font-weight:700;font-size:.95em;
+  color:var(--sub);background:none;border:none;
+  cursor:pointer;font-family:'Exo 2',sans-serif;letter-spacing:.5px;
+  position:relative;overflow:hidden;
+  transition:color .3s,background .3s;
+}
+.nav-tab::after{
+  content:'';position:absolute;bottom:-3px;left:50%;right:50%;
+  height:3px;background:var(--gold-dark);
+  transition:left .3s,right .3s;
+}
+.nav-tab.active{color:var(--gold-dark);background:var(--cream)}
+.nav-tab.active::after{left:0;right:0}
+.nav-tab:hover:not(.active){background:rgba(218,165,32,.1)}
+
+/* ===== CONTENT ===== */
+.content{padding:40px 45px}
+@media(max-width:600px){.content{padding:24px 14px}}
+
+/* ===== SMOOTH SECTION TRANSITIONS ===== */
+.section{display:none}
+.section.active{
+  display:block;
+  animation:tabIn .38s cubic-bezier(.4,0,.2,1) both;
+}
+@keyframes tabIn{
+  from{opacity:0;transform:translateY(16px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* ===== FORM ===== */
+.form-group{margin-bottom:24px;position:relative}
+label{display:block;margin-bottom:9px;font-weight:700;color:var(--brown);font-size:1em;letter-spacing:.3px}
+input,select{
+  width:100%;padding:15px 18px;
+  border:2px solid var(--border);
+  border-radius:12px;font-size:15px;
+  background:var(--input-bg);color:var(--text);
+  transition:all .3s;
+  font-family:'Exo 2',sans-serif;
+}
+input:focus,select:focus{
+  outline:none;border-color:var(--gold-dark);
+  box-shadow:0 0 18px var(--shadow);
+  transform:translateY(-2px);
+}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:520px){.form-row{grid-template-columns:1fr}}
+
+/* ===== BUTTONS ===== */
+.btn{
+  width:100%;padding:17px;
+  background:linear-gradient(45deg,var(--gold-dark),var(--gold));
+  color:#fff;border:none;border-radius:13px;
+  font-size:1.1em;font-weight:700;cursor:pointer;
+  transition:all .3s;
+  box-shadow:0 6px 18px var(--shadow);
+  letter-spacing:1.2px;font-family:'Rajdhani',sans-serif;
+  text-transform:uppercase;
+}
+.btn:hover{transform:translateY(-3px);box-shadow:0 12px 28px var(--shadow)}
+.btn:active{transform:translateY(-1px)}
+.btn-danger{background:linear-gradient(45deg,#a0522d,var(--danger))}
+.btn-success{background:linear-gradient(45deg,#1a6b3c,var(--success))}
+.btn-info{background:linear-gradient(45deg,#1a4b6b,var(--info))}
+.btn-mod{background:linear-gradient(45deg,#6c3483,var(--mod))}
+.btn-sm{padding:9px 18px;font-size:.9em;width:auto;border-radius:9px}
+.btn-outline{
+  background:none;border:2px solid var(--border);color:var(--brown);
+  box-shadow:none;
+}
+.btn-outline:hover{background:rgba(218,165,32,.15)}
+
+/* ===== SEARCH BAR ===== */
+.search-bar{position:relative;margin-bottom:18px}
+.search-bar input{padding-left:44px}
+.search-bar .icon{
+  position:absolute;left:14px;top:50%;transform:translateY(-50%);
+  font-size:1.2em;pointer-events:none;opacity:.6;
+}
+
+/* ===== FILTER ROW ===== */
+.filter-row{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
+.filter-row select{flex:1;min-width:140px;padding:10px 14px}
+.filter-row .btn-sm{flex-shrink:0}
+
+/* ===== EXPORT ROW ===== */
+.export-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.export-row .btn{flex:1;min-width:140px;padding:12px;font-size:.95em}
+
+/* ===== STATS ===== */
+.stats-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:16px;margin-bottom:26px;
+}
+.stat-card{
+  background:var(--card-bg);border:2px solid var(--border);
+  border-radius:16px;padding:20px 14px;text-align:center;
+  box-shadow:0 6px 18px var(--shadow);transition:transform .25s;
+}
+.stat-card:hover{transform:translateY(-4px)}
+.stat-card .val{font-size:2.1em;font-weight:900;color:var(--gold-dark);font-family:'Rajdhani',sans-serif}
+.stat-card .lbl{font-size:.82em;color:var(--sub);margin-top:4px;font-weight:600}
+
+/* ===== REALTIME BADGE ===== */
+.rt-badge{
+  display:inline-flex;align-items:center;gap:7px;
+  background:rgba(39,174,96,.15);border:1.5px solid #27ae60;
+  border-radius:20px;padding:5px 14px;
+  font-size:.85em;font-weight:700;color:#27ae60;margin-left:12px;
+}
+.rt-dot{width:8px;height:8px;border-radius:50%;background:#27ae60;animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+
+/* ===== INTRO CARD ===== */
+.intro-item{
+  background:var(--card-bg);
+  border:2px solid var(--border);
+  border-radius:18px;padding:24px;
+  margin-bottom:20px;position:relative;
+  box-shadow:0 8px 24px var(--shadow);
+  transition:transform .3s,box-shadow .3s,border-color .3s;
+  animation:cardIn .4s cubic-bezier(.4,0,.2,1) both;
+}
+/* Gold glow on hover */
+.intro-item:hover{
+  transform:translateY(-6px);
+  box-shadow:0 20px 48px var(--shadow), 0 0 32px rgba(218,165,32,.45);
+  border-color:var(--gold-light);
+}
+/* Staggered entry */
+.intro-item:nth-child(1){animation-delay:.04s}
+.intro-item:nth-child(2){animation-delay:.09s}
+.intro-item:nth-child(3){animation-delay:.14s}
+.intro-item:nth-child(4){animation-delay:.19s}
+.intro-item:nth-child(5){animation-delay:.24s}
+.intro-item:nth-child(n+6){animation-delay:.30s}
+
+@keyframes cardIn{
+  from{opacity:0;transform:translateY(22px) scale(.97)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+@keyframes newItemIn{
+  0%{opacity:0;transform:translateY(-26px) scale(.95);
+    box-shadow:0 0 0 4px rgba(218,165,32,.6)}
+  60%{box-shadow:0 0 28px rgba(218,165,32,.5)}
+  100%{opacity:1;transform:translateY(0) scale(1);box-shadow:0 8px 24px var(--shadow)}
+}
+.intro-item.new-item{animation:newItemIn .6s cubic-bezier(.4,0,.2,1)!important}
+
+.player-name{
+  font-size:1.4em;font-weight:700;
+  color:var(--brown);margin-bottom:14px;
+  font-family:'Rajdhani',sans-serif;letter-spacing:.5px;
+  padding-right:88px;
+}
+.player-info{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+  gap:12px;margin-bottom:14px;
+}
+.info-item{
+  background:var(--input-bg);padding:13px 10px;
+  border-radius:11px;text-align:center;
+  border:1.5px solid var(--border);
+}
+.info-label{font-size:.78em;color:var(--sub);margin-bottom:5px;font-weight:600}
+.info-value{font-weight:700;color:var(--text);font-size:1.05em}
+.timestamp{color:var(--sub);font-size:.88em;text-align:right;font-weight:500}
+
+/* Card action buttons */
+.card-actions{
+  position:absolute;top:14px;right:14px;
+  display:flex;gap:8px;align-items:center;
+}
+.delete-btn,.edit-btn{
+  width:36px;height:36px;border-radius:50%;
+  color:#fff;border:none;font-size:1em;cursor:pointer;
+  box-shadow:0 4px 12px rgba(0,0,0,.18);
+  transition:all .3s;display:flex;align-items:center;justify-content:center;
+}
+.delete-btn{background:linear-gradient(135deg,#cd853f,var(--danger))}
+.delete-btn:hover{transform:scale(1.18);box-shadow:0 6px 18px rgba(180,50,50,.55)}
+.edit-btn{background:linear-gradient(135deg,#1a6b3c,#2980b9)}
+.edit-btn:hover{transform:scale(1.18);box-shadow:0 6px 18px rgba(41,128,185,.55)}
+
+/* ===== SKELETON LOADING ===== */
+.skeleton{
+  background:linear-gradient(90deg,var(--cream2) 25%,rgba(218,165,32,.18) 50%,var(--cream2) 75%);
+  background-size:200% 100%;
+  animation:shimmer 1.6s infinite;
+  border-radius:10px;
+}
+@keyframes shimmer{
+  from{background-position:200% 0}
+  to{background-position:-200% 0}
+}
+.skeleton-card{
+  background:var(--card-bg);border:2px solid var(--border);
+  border-radius:18px;padding:24px;margin-bottom:20px;
+  box-shadow:0 8px 24px var(--shadow);
+}
+.skel-title{height:26px;width:55%;margin-bottom:16px}
+.skel-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.skel-cell{height:64px}
+.skel-ts{height:14px;width:42%;margin-left:auto}
+
+/* ===== EMPTY STATE ===== */
+.empty{text-align:center;padding:60px 20px;color:var(--sub);font-size:1.15em}
+
+/* ===== TOAST (enhanced) ===== */
+.toast-wrap{
+  position:fixed;bottom:28px;right:24px;
+  z-index:9999;display:flex;flex-direction:column;gap:10px;
+  max-width:340px;pointer-events:none;align-items:flex-end;
+}
+.toast{
+  padding:14px 22px 18px;border-radius:13px;
+  font-weight:700;font-size:.95em;color:#fff;
+  transform:translateX(120%);opacity:0;
+  transition:transform .42s cubic-bezier(.4,0,.2,1),opacity .42s;
+  font-family:'Exo 2',sans-serif;
+  box-shadow:0 8px 28px rgba(0,0,0,.25);
+  position:relative;overflow:hidden;
+  min-width:200px;
+}
+.toast.show{transform:translateX(0);opacity:1}
+.toast-bar{
+  position:absolute;bottom:0;left:0;height:3px;
+  background:rgba(255,255,255,.55);width:100%;
+  animation:toastBar 3.2s linear forwards;
+  transform-origin:left;
+}
+@keyframes toastBar{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+.toast.success{background:linear-gradient(135deg,#1a6b3c,#27ae60)}
+.toast.error{background:linear-gradient(135deg,#7b1515,#c0392b)}
+.toast.info{background:linear-gradient(135deg,#1a4b6b,#2980b9)}
+.toast.warning{background:linear-gradient(135deg,#7b4a00,#e67e22)}
+
+/* ===== MODAL ===== */
+.modal-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.56);z-index:8888;
+  align-items:center;justify-content:center;
+  backdrop-filter:blur(4px);
+}
+.modal-overlay.open{display:flex;animation:fadeOverlay .22s ease}
+@keyframes fadeOverlay{from{opacity:0}to{opacity:1}}
+.modal-box{
+  background:var(--container-bg);border:2px solid var(--border);
+  border-radius:20px;padding:36px 32px;text-align:center;
+  max-width:380px;width:90%;
+  box-shadow:0 24px 60px var(--shadow);
+  animation:modalIn .3s cubic-bezier(.4,0,.2,1);
+}
+@keyframes modalIn{
+  from{opacity:0;transform:scale(.9) translateY(22px)}
+  to{opacity:1;transform:scale(1) translateY(0)}
+}
+.modal-box h3{color:var(--brown);font-size:1.3em;margin-bottom:12px;font-family:'Rajdhani',sans-serif}
+.modal-box p{color:var(--sub);margin-bottom:24px;font-size:.95em}
+.modal-btns{display:flex;gap:12px}
+.modal-btns .btn{flex:1;padding:13px}
+
+/* EDIT MODAL */
+.edit-modal-box{max-width:520px;text-align:left;padding:30px 32px}
+.edit-modal-box h3{margin-bottom:20px;text-align:center}
+.edit-modal-box .form-group{margin-bottom:16px}
+.edit-modal-box label{margin-bottom:6px;font-size:.9em}
+.edit-modal-box input{padding:12px 14px;font-size:14px}
+.edit-modal-box .form-row{gap:14px}
+
+/* ===== SPAM / LOCKED INFO ===== */
+.spam-info{
+  background:rgba(218,165,32,.12);border:1.5px solid var(--border);
+  border-radius:10px;padding:10px 16px;
+  font-size:.85em;color:var(--sub);margin-bottom:18px;text-align:center;
+}
+
+/* ===== FIELD ERROR ===== */
+.field-error{
+  color:var(--danger);font-size:.83em;margin-top:6px;
+  display:none;font-weight:700;
+  animation:tabIn .2s ease;
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--cream2)}
+::-webkit-scrollbar-thumb{background:var(--gold);border-radius:3px}
+
+/* ===== ROLE CARDS ===== */
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:8px}
+@media(max-width:520px){.role-grid{grid-template-columns:1fr}}
+.role-card{
+  background:var(--card-bg);border:2px solid var(--border);
+  border-radius:18px;padding:32px 16px;
+  text-align:center;cursor:pointer;
+  transition:all .3s;
+  box-shadow:0 8px 24px var(--shadow);
+  font-family:'Exo 2',sans-serif;
+  width:100%;
+}
+.role-card:hover{
+  transform:translateY(-6px);
+  box-shadow:0 18px 40px var(--shadow),0 0 24px rgba(218,165,32,.35);
+  border-color:var(--gold-dark);
+}
+.role-icon{font-size:2.8em;margin-bottom:12px}
+.role-label{font-size:1.25em;font-weight:700;color:var(--brown);font-family:'Rajdhani',sans-serif;letter-spacing:.5px}
+.role-desc{font-size:.82em;color:var(--sub);margin-top:5px}
+
+/* OTHER UI */
+.back-btn{
+  background:none;border:1.5px solid var(--border);
+  color:var(--sub);border-radius:9px;padding:7px 16px;
+  font-size:.88em;cursor:pointer;margin-bottom:22px;
+  font-family:'Exo 2',sans-serif;font-weight:600;
+  transition:all .25s;
+}
+.back-btn:hover{background:rgba(218,165,32,.12);color:var(--brown)}
+.login-card{max-width:420px;margin:0 auto}
+.login-icon{font-size:3.5em;text-align:center;margin-bottom:18px}
+.section-title{
+  text-align:center;margin-bottom:32px;
+  color:var(--brown);font-size:1.9em;
+  font-family:'Rajdhani',sans-serif;letter-spacing:1px
+}
+.divider{height:2px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:22px 0}
+.remember-row{
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:20px;cursor:pointer;user-select:none;
+}
+.remember-row input[type=checkbox]{
+  width:20px;height:20px;padding:0;
+  accent-color:var(--gold-dark);cursor:pointer;flex-shrink:0;
+}
+.remember-row span{font-size:.92em;color:var(--sub);font-weight:600}
+
+/* ===== ACTIVITY LOG ===== */
+.activity-log{
+  background:var(--card-bg);border:2px solid var(--border);
+  border-radius:16px;padding:20px;margin-top:20px;
+}
+.activity-log-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:14px;
+}
+.activity-log-header h4{
+  font-family:'Rajdhani',sans-serif;font-size:1.2em;color:var(--brown);
+}
+.log-list{max-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.log-item{
+  background:var(--input-bg);border:1.5px solid var(--border);
+  border-left-width:4px;
+  border-radius:9px;padding:10px 14px;font-size:.84em;
+  display:flex;align-items:center;gap:10px;
+  animation:cardIn .3s ease;
+}
+.log-item .log-icon{font-size:1.1em;flex-shrink:0}
+.log-item .log-text{flex:1;color:var(--text)}
+.log-item .log-time{color:var(--sub);font-size:.82em;flex-shrink:0;white-space:nowrap}
+.log-add{border-left-color:#27ae60}
+.log-edit{border-left-color:var(--info)}
+.log-delete{border-left-color:var(--danger)}
+.log-export{border-left-color:var(--gold)}
+.log-empty{text-align:center;color:var(--sub);padding:20px;font-size:.9em}
+
+/* ===== AUTOSAVE INDICATOR ===== */
+.autosave-badge{
+  display:inline-block;
+  font-size:.76em;color:var(--success);
+  font-weight:600;margin-left:8px;
+  opacity:0;transition:opacity .4s;
+}
+.autosave-badge.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <button class="theme-btn" id="themeBtn" title="Toggle Dark Mode">🌙</button>
+    <h1>🎮 INTRO FF 🎮</h1>
+    <p>Golden Intro System</p>
+  </div>
+
+  <!-- NAV TABS -->
+  <div class="nav-tabs" id="navTabs" style="display:none">
+    <button class="nav-tab active" id="tabIntro" onclick="switchTab('introSection',this)">📝 Intro</button>
+    <button class="nav-tab" id="tabPanel" onclick="switchTab('adminSection',this)">🛡️ Panel</button>
+  </div>
+
+  <div class="content">
+
+    <!-- ====== PILIH ROLE ====== -->
+    <div id="loginSection" class="section active">
+      <div class="login-card">
+        <div class="login-icon">🎮</div>
+        <div class="section-title">Masuk Sebagai</div>
+        <div class="role-grid">
+          <button class="role-card" onclick="selectRole('user')">
+            <div class="role-icon">👤</div>
+            <div class="role-label">User</div>
+            <div class="role-desc">Daftar intro FF kamu</div>
+          </button>
+          <button class="role-card" onclick="selectRole('admin')">
+            <div class="role-icon">🔐</div>
+            <div class="role-label">Admin</div>
+            <div class="role-desc">Full kontrol semua data</div>
+          </button>
+        </div>
+        <div style="margin-top:14px">
+          <button class="role-card" style="padding:22px 16px" onclick="selectRole('mod')">
+            <div class="role-icon">🛡️</div>
+            <div class="role-label">Moderator</div>
+            <div class="role-desc">Lihat &amp; edit data — tidak bisa hapus</div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== LOGIN USER ====== -->
+    <div id="loginUserSection" class="section">
+      <div class="login-card">
+        <button class="back-btn" onclick="backToRole()">← Kembali</button>
+        <div class="login-icon">👤</div>
+        <div class="section-title">Login User</div>
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="loginUserName" placeholder="Masukkan username" autocomplete="off">
+        </div>
+        <label class="remember-row">
+          <input type="checkbox" id="rememberUser">
+          <span>🔖 Ingat Saya di perangkat ini</span>
+        </label>
+        <button class="btn" onclick="doLoginUser()">MASUK</button>
+      </div>
+    </div>
+
+    <!-- ====== LOGIN ADMIN ====== -->
+    <div id="loginAdminSection" class="section">
+      <div class="login-card">
+        <button class="back-btn" onclick="backToRole()">← Kembali</button>
+        <div class="login-icon">🔐</div>
+        <div class="section-title">Login Admin</div>
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="loginAdminUser" placeholder="Username admin" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="loginAdminPass" placeholder="Password admin">
+        </div>
+        <label class="remember-row">
+          <input type="checkbox" id="rememberAdmin">
+          <span>🔖 Ingat Saya di perangkat ini</span>
+        </label>
+        <button class="btn" onclick="doLoginAdmin()">LOGIN ADMIN</button>
+      </div>
+    </div>
+
+    <!-- ====== LOGIN MOD ====== -->
+    <div id="loginModSection" class="section">
+      <div class="login-card">
+        <button class="back-btn" onclick="backToRole()">← Kembali</button>
+        <div class="login-icon">🛡️</div>
+        <div class="section-title">Login Moderator</div>
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="loginModUser" placeholder="Username moderator" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="loginModPass" placeholder="Password moderator">
+        </div>
+        <button class="btn btn-mod" onclick="doLoginMod()">LOGIN MODERATOR</button>
+      </div>
+    </div>
+
+    <!-- ====== INTRO FORM ====== -->
+    <div id="introSection" class="section">
+      <div class="section-title">
+        📝 Form Intro
+        <span class="autosave-badge" id="autosaveBadge">💾 Draft tersimpan</span>
+      </div>
+      <div id="spamInfo" class="spam-info" style="display:none"></div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>ID FF (8–12 digit)</label>
+          <input type="text" id="ffId" placeholder="12345678" maxlength="12"
+            inputmode="numeric" oninput="autosaveForm();clearFieldError('ffIdError')">
+          <div class="field-error" id="ffIdError">❌ ID FF sudah digunakan!</div>
+        </div>
+        <div class="form-group">
+          <label>Nama In Game (2–12 char)</label>
+          <input type="text" id="ingame" placeholder="NamaIG" maxlength="12" oninput="autosaveForm()">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Nama Asli</label>
+        <input type="text" id="realname" placeholder="Nama Lengkap" oninput="autosaveForm()">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Level Akun</label>
+          <input type="number" id="level" placeholder="80" min="1" max="999" oninput="autosaveForm()">
+        </div>
+        <div class="form-group">
+          <label>Usia (10–60)</label>
+          <input type="number" id="age" placeholder="20" min="10" max="60" oninput="autosaveForm()">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Kota</label>
+        <input type="text" id="city" placeholder="Jakarta" oninput="autosaveForm()">
+      </div>
+      <button class="btn" id="introBtn" onclick="doIntro()">🚀 INTRO SEKARANG</button>
+      <div class="divider"></div>
+      <button class="btn btn-danger" onclick="doLogout()">🚪 LOGOUT</button>
+    </div>
+
+    <!-- ====== ADMIN / MOD PANEL ====== -->
+    <div id="adminSection" class="section">
+      <div style="display:flex;align-items:center;justify-content:center;margin-bottom:24px;flex-wrap:wrap;gap:8px">
+        <div class="section-title" style="margin:0" id="panelTitle">👨‍💼 Admin Panel</div>
+        <span class="rt-badge"><span class="rt-dot"></span> REALTIME</span>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats-grid">
+        <div class="stat-card"><div class="val" id="stTotal">0</div><div class="lbl">Total Intro</div></div>
+        <div class="stat-card"><div class="val" id="stAvgAge">-</div><div class="lbl">Rata-rata Usia</div></div>
+        <div class="stat-card"><div class="val" id="stAvgLvl">-</div><div class="lbl">Rata-rata Level</div></div>
+        <div class="stat-card"><div class="val" id="stTopCity">-</div><div class="lbl">Kota Terbanyak</div></div>
+      </div>
+
+      <!-- EXPORT BUTTONS (admin only) -->
+      <div class="export-row" id="exportRow" style="display:none">
+        <button class="btn btn-success" onclick="exportCSV()">📄 Export CSV</button>
+        <button class="btn btn-info" onclick="exportExcel()">📊 Export Excel (.xlsx)</button>
+      </div>
+
+      <!-- SEARCH -->
+      <div class="search-bar">
+        <span class="icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Cari nama, ID, kota..." oninput="renderList()">
+      </div>
+
+      <!-- FILTER -->
+      <div class="filter-row">
+        <select id="filterCity" onchange="renderList()">
+          <option value="">Semua Kota</option>
+        </select>
+        <select id="filterLevel" onchange="renderList()">
+          <option value="">Semua Level</option>
+          <option value="1-50">Lv. 1–50</option>
+          <option value="51-100">Lv. 51–100</option>
+          <option value="101+">Lv. 100+</option>
+        </select>
+        <button class="btn btn-sm btn-outline" onclick="resetFilter()">Reset</button>
+      </div>
+
+      <!-- DATA LIST -->
+      <div id="dataList"></div>
+
+      <!-- ACTIVITY LOG -->
+      <div class="activity-log" id="activityLogBox" style="display:none">
+        <div class="activity-log-header">
+          <h4>🧠 Activity Log</h4>
+          <button class="btn btn-sm btn-outline" style="font-size:.8em" onclick="clearActivityLog()">🗑️ Clear Log</button>
+        </div>
+        <div class="log-list" id="logList">
+          <div class="log-empty">Belum ada aktivitas tercatat</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <button class="btn btn-danger" onclick="doLogout()">🚪 LOGOUT</button>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /container -->
+
+<!-- TOAST WRAPPER -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <h3>🗑️ Hapus Data?</h3>
+    <p id="modalMsg">Yakin ingin menghapus data ini?</p>
+    <div class="modal-btns">
+      <button class="btn btn-outline btn-sm" onclick="closeModal()">Batal</button>
+      <button class="btn btn-danger btn-sm" id="modalConfirm">Hapus</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box edit-modal-box">
+    <h3>✏️ Edit Data Intro</h3>
+    <input type="hidden" id="editId">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nama In Game</label>
+        <input type="text" id="editIngame" placeholder="NamaIG" maxlength="12">
+      </div>
+      <div class="form-group">
+        <label>Nama Asli</label>
+        <input type="text" id="editRealname" placeholder="Nama Lengkap">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Level Akun</label>
+        <input type="number" id="editLevel" placeholder="80" min="1" max="999">
+      </div>
+      <div class="form-group">
+        <label>Usia</label>
+        <input type="number" id="editAge" placeholder="20" min="10" max="60">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Kota</label>
+      <input type="text" id="editCity" placeholder="Jakarta">
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-outline btn-sm" onclick="closeEditModal()">Batal</button>
+      <button class="btn btn-sm" onclick="confirmEdit()">💾 Simpan Perubahan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// =======================================
+// CONFIG
+// =======================================
+const ADMIN_USER = 'lawliet';
+const ADMIN_PASS = 'L';
+const MOD_USER   = 'moderator';
+const MOD_PASS   = 'mod123';
+const API        = 'https://introff.up.railway.app/intro';
+
+// =======================================
+// STATE
+// =======================================
+let allData       = [];
+let currentUser   = null;
+let currentRole   = null; // 'admin' | 'mod' | 'user'
+let pendingDeleteId = null;
+let audioCtx      = null;
+let sseSource     = null;
+let toastCount    = 0;
+
+// =======================================
+// DEVICE FINGERPRINT
+// =======================================
+function getDeviceId() {
+  const raw = [
+    navigator.userAgent,
+    screen.width + 'x' + screen.height,
+    screen.colorDepth,
+    Intl.DateTimeFormat().resolvedOptions().timeZone,
+    navigator.language,
+    navigator.hardwareConcurrency || 0
+  ].join('|');
+  let h = 0;
+  for (let i = 0; i < raw.length; i++) h = (Math.imul(31, h) + raw.charCodeAt(i)) | 0;
+  return 'dev_' + Math.abs(h).toString(36);
+}
+const DEVICE_ID       = getDeviceId();
+const DEVICE_INTRO_KEY = `ff_device_done_${DEVICE_ID}`;
+
+// =======================================
+// THEME
+// =======================================
+const themeBtn   = document.getElementById('themeBtn');
+const savedTheme = localStorage.getItem('ff_theme') || 'light';
+document.documentElement.setAttribute('data-theme', savedTheme);
+themeBtn.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+themeBtn.onclick = () => {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('ff_theme', next);
+  themeBtn.textContent = next === 'dark' ? '☀️' : '🌙';
+  playSound('click');
+};
+
+// =======================================
+// SOUND
+// =======================================
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function playSound(type) {
+  try {
+    const ctx  = getAudioCtx();
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    const cfg = {
+      click:   { freq:600, type:'sine',     dur:.08, vol:.12 },
+      success: { freq:880, type:'triangle', dur:.28, vol:.18 },
+      error:   { freq:220, type:'sawtooth', dur:.28, vol:.15 },
+      delete:  { freq:350, type:'square',   dur:.22, vol:.12 },
+      login:   { freq:740, type:'triangle', dur:.35, vol:.18 },
+      edit:    { freq:660, type:'sine',     dur:.2,  vol:.14 },
+    };
+    const c = cfg[type] || cfg.click;
+    osc.type = c.type; osc.frequency.value = c.freq;
+    gain.gain.setValueAtTime(c.vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + c.dur);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + c.dur);
+  } catch(e) {}
+}
+
+// =======================================
+// TOAST (stacked, smooth, progress bar)
+// =======================================
+function showToast(msg, type = 'info') {
+  const wrap = document.getElementById('toastWrap');
+  const id   = 'toast_' + (++toastCount);
+  const div  = document.createElement('div');
+  div.className = `toast ${type}`;
+  div.id = id;
+  div.innerHTML = `${msg}<div class="toast-bar"></div>`;
+  wrap.appendChild(div);
+  // Double rAF trick for CSS transition to trigger
+  requestAnimationFrame(() => requestAnimationFrame(() => div.classList.add('show')));
+  setTimeout(() => {
+    div.classList.remove('show');
+    setTimeout(() => div.remove(), 480);
+  }, 3200);
+}
+
+// =======================================
+// MODAL — DELETE
+// =======================================
+function openModal(id, name) {
+  pendingDeleteId = id;
+  document.getElementById('modalMsg').textContent = `Hapus data "${name}"?`;
+  document.getElementById('modal').classList.add('open');
+  document.getElementById('modalConfirm').onclick = () => { confirmDelete(); closeModal(); };
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  pendingDeleteId = null;
+}
+
+// =======================================
+// MODAL — EDIT
+// =======================================
+function openEditModal(id) {
+  const item = allData.find(d => d._id === id);
+  if (!item) return;
+  document.getElementById('editId').value       = id;
+  document.getElementById('editIngame').value   = item.namaInGame || '';
+  document.getElementById('editRealname').value = item.namaReal   || '';
+  document.getElementById('editLevel').value    = item.levelAkun  || '';
+  document.getElementById('editAge').value      = item.usia       || '';
+  document.getElementById('editCity').value     = item.kota       || '';
+  document.getElementById('editModal').classList.add('open');
+  playSound('click');
+}
+function closeEditModal() { document.getElementById('editModal').classList.remove('open'); }
+
+function confirmEdit() {
+  const id       = document.getElementById('editId').value;
+  const ingame   = document.getElementById('editIngame').value.trim();
+  const realname = document.getElementById('editRealname').value.trim();
+  const level    = parseInt(document.getElementById('editLevel').value);
+  const age      = parseInt(document.getElementById('editAge').value);
+  const city     = document.getElementById('editCity').value.trim();
+
+  if (!ingame || !realname || !level || !age || !city) {
+    showToast('❌ Isi semua field!', 'error'); playSound('error'); return;
+  }
+  if (ingame.length < 2 || ingame.length > 12) {
+    showToast('❌ Nama IG 2–12 karakter!', 'error'); playSound('error'); return;
+  }
+  if (age < 10 || age > 60) {
+    showToast('❌ Usia 10–60 tahun!', 'error'); playSound('error'); return;
+  }
+
+  const oldItem = allData.find(d => d._id === id);
+
+  fetch(`${API}/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ namaInGame: ingame, namaReal: realname, levelAkun: level, usia: age, kota: city })
+  })
+  .then(r => r.json())
+  .then(() => {
+    const idx = allData.findIndex(d => d._id === id);
+    if (idx !== -1) {
+      allData[idx] = { ...allData[idx], namaInGame: ingame, namaReal: realname, levelAkun: level, usia: age, kota: city };
+    }
+    updateStats(); renderList(); populateCityFilter();
+    closeEditModal();
+    showToast(`✏️ ${ingame} berhasil diupdate!`, 'success'); playSound('edit');
+    addLog('edit', `Edit: ${oldItem?.namaInGame} → ${ingame}`, '✏️');
+  })
+  .catch(() => { showToast('❌ Gagal update data', 'error'); playSound('error'); });
+}
+
+// =======================================
+// SECTION / TAB
+// =======================================
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function switchTab(id, btn) {
+  playSound('click');
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  showSection(id);
+}
+
+// =======================================
+// ROLE SELECT
+// =======================================
+function selectRole(role) {
+  playSound('click');
+  if (role === 'admin')     showSection('loginAdminSection');
+  else if (role === 'mod')  showSection('loginModSection');
+  else                      showSection('loginUserSection');
+}
+function backToRole() { playSound('click'); showSection('loginSection'); }
+
+// =======================================
+// AUTO LOGIN
+// =======================================
+function checkAutoLogin() {
+  const saved = localStorage.getItem('ff_remember');
+  if (!saved) return;
+  try {
+    const { role, user } = JSON.parse(saved);
+    if (role === 'admin' && user === ADMIN_USER) enterAdmin();
+    else if (role === 'mod' && user === MOD_USER) enterMod();
+    else if (role === 'user' && user) enterUser(user);
+  } catch { localStorage.removeItem('ff_remember'); }
+}
+
+// =======================================
+// LOGIN — USER
+// =======================================
+function doLoginUser() {
+  playSound('click');
+  const user = document.getElementById('loginUserName').value.trim();
+  if (!user) { showToast('❌ Username kosong!', 'error'); playSound('error'); return; }
+  const remember = document.getElementById('rememberUser').checked;
+  if (remember) localStorage.setItem('ff_remember', JSON.stringify({ role: 'user', user }));
+  enterUser(user);
+}
+function enterUser(user) {
+  currentUser = user; currentRole = 'user';
+  document.getElementById('navTabs').style.display = 'none';
+  showSection('introSection');
+  playSound('login');
+  showToast(`✅ Halo, ${user}! Silakan intro.`, 'success');
+  restoreFormDraft();
+  checkDeviceLocked();
+}
+
+// =======================================
+// LOGIN — ADMIN
+// =======================================
+function doLoginAdmin() {
+  playSound('click');
+  const user = document.getElementById('loginAdminUser').value.trim();
+  const pass = document.getElementById('loginAdminPass').value.trim();
+  if (user === ADMIN_USER && pass === ADMIN_PASS) {
+    const remember = document.getElementById('rememberAdmin').checked;
+    if (remember) localStorage.setItem('ff_remember', JSON.stringify({ role: 'admin', user }));
+    enterAdmin();
+  } else { showToast('❌ Username atau password salah!', 'error'); playSound('error'); }
+}
+function enterAdmin() {
+  currentUser = ADMIN_USER; currentRole = 'admin';
+  document.getElementById('panelTitle').textContent = '👨‍💼 Admin Panel';
+  document.getElementById('exportRow').style.display = 'flex';
+  document.getElementById('activityLogBox').style.display = 'block';
+  document.getElementById('navTabs').style.display = 'none';
+  showSection('adminSection');
+  renderActivityLog();
+  loadData(true);
+  startSSE();
+  playSound('login');
+  showToast('✅ Login admin berhasil!', 'success');
+}
+
+// =======================================
+// LOGIN — MODERATOR
+// =======================================
+function doLoginMod() {
+  playSound('click');
+  const user = document.getElementById('loginModUser').value.trim();
+  const pass = document.getElementById('loginModPass').value.trim();
+  if (user === MOD_USER && pass === MOD_PASS) {
+    enterMod();
+  } else { showToast('❌ Username atau password salah!', 'error'); playSound('error'); }
+}
+function enterMod() {
+  currentUser = MOD_USER; currentRole = 'mod';
+  document.getElementById('panelTitle').textContent = '🛡️ Mod Panel';
+  document.getElementById('exportRow').style.display = 'none';
+  document.getElementById('activityLogBox').style.display = 'none';
+  document.getElementById('navTabs').style.display = 'none';
+  showSection('adminSection');
+  loadData(true);
+  startSSE();
+  playSound('login');
+  showToast('✅ Login moderator berhasil!', 'success');
+}
+
+// =======================================
+// 1 DEVICE 1 FORM (with auto-reset when admin deletes)
+// =======================================
+async function checkDeviceLocked() {
+  const raw = localStorage.getItem(DEVICE_INTRO_KEY);
+  if (!raw) { unlockForm(); return false; }
+
+  let stored;
+  try { stored = JSON.parse(raw); }
+  catch { stored = { time: raw, ffId: null }; }
+
+  // Cek server: apakah ffId masih ada?
+  if (stored.ffId) {
+    try {
+      const resp = await fetch(API);
+      const data = await resp.json();
+      const stillExists = data.some(d => String(d.ffId) === String(stored.ffId));
+      if (!stillExists) {
+        // Admin telah hapus data → unlock otomatis!
+        localStorage.removeItem(DEVICE_INTRO_KEY);
+        unlockForm();
+        showToast('🔓 Data di-reset admin. Silakan isi ulang!', 'info');
+        return false;
+      }
+    } catch(e) { /* Gagal fetch, tetap locked */ }
+  }
+
+  lockForm();
+  return true;
+}
+
+function lockForm() {
+  const info = document.getElementById('spamInfo');
+  const btn  = document.getElementById('introBtn');
+  document.querySelectorAll('#introSection input').forEach(i => { i.disabled = true; i.style.opacity = '.5'; });
+  if (btn) { btn.disabled = true; btn.style.opacity = '.5'; btn.textContent = '✅ Sudah Intro'; }
+  info.style.display = 'block';
+  info.innerHTML = '🔒 <strong>Perangkat ini sudah pernah mengisi form intro.</strong><br>'
+    + '<span style="font-size:.85em">Hanya bisa 1x per perangkat. Hubungi admin untuk reset.</span>';
+}
+
+function unlockForm() {
+  const info = document.getElementById('spamInfo');
+  const btn  = document.getElementById('introBtn');
+  document.querySelectorAll('#introSection input').forEach(i => { i.disabled = false; i.style.opacity = '1'; });
+  if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.textContent = '🚀 INTRO SEKARANG'; }
+  info.style.display = 'none';
+}
+
+// =======================================
+// AUTOSAVE FORM (Feature #9)
+// =======================================
+const FORM_DRAFT_KEY = 'ff_form_draft';
+let autosaveTimer;
+
+function autosaveForm() {
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(() => {
+    const draft = {
+      ffId:     document.getElementById('ffId').value,
+      ingame:   document.getElementById('ingame').value,
+      realname: document.getElementById('realname').value,
+      level:    document.getElementById('level').value,
+      age:      document.getElementById('age').value,
+      city:     document.getElementById('city').value,
+    };
+    localStorage.setItem(FORM_DRAFT_KEY, JSON.stringify(draft));
+
+    // Tampilkan badge autosave
+    const badge = document.getElementById('autosaveBadge');
+    if (badge) {
+      badge.classList.add('show');
+      setTimeout(() => badge.classList.remove('show'), 1800);
+    }
+  }, 600);
+}
+
+function restoreFormDraft() {
+  const raw = localStorage.getItem(FORM_DRAFT_KEY);
+  if (!raw) return;
+  try {
+    const d = JSON.parse(raw);
+    if (!Object.values(d).some(v => v)) return; // semua kosong, skip
+    document.getElementById('ffId').value     = d.ffId     || '';
+    document.getElementById('ingame').value   = d.ingame   || '';
+    document.getElementById('realname').value = d.realname || '';
+    document.getElementById('level').value    = d.level    || '';
+    document.getElementById('age').value      = d.age      || '';
+    document.getElementById('city').value     = d.city     || '';
+    showToast('📋 Draft form dipulihkan!', 'info');
+  } catch {}
+}
+
+function clearFormDraft() { localStorage.removeItem(FORM_DRAFT_KEY); }
+
+// =======================================
+// FIELD ERROR
+// =======================================
+function showFieldError(id, msg) {
+  const el = document.getElementById(id);
+  if (el) { el.textContent = msg; el.style.display = 'block'; }
+}
+function clearFieldError(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = 'none';
+}
+
+// =======================================
+// INTRO SUBMIT (with anti-duplikat #6)
+// =======================================
+async function doIntro() {
+  playSound('click');
+  if (await checkDeviceLocked()) {
+    showToast('🔒 Perangkat ini sudah pernah intro!', 'error'); playSound('error'); return;
+  }
+  clearFieldError('ffIdError');
+
+  const ffid     = document.getElementById('ffId').value.trim();
+  const ingame   = document.getElementById('ingame').value.trim();
+  const realname = document.getElementById('realname').value.trim();
+  const level    = document.getElementById('level').value.trim();
+  const age      = parseInt(document.getElementById('age').value);
+  const city     = document.getElementById('city').value.trim();
+
+  if (!/^\d{8,12}$/.test(ffid))         { showToast('❌ ID FF harus 8–12 digit angka!','error'); playSound('error'); return; }
+  if (ingame.length<2||ingame.length>12) { showToast('❌ Nama IG 2–12 karakter!','error');        playSound('error'); return; }
+  if (!realname||!level||!age||!city)    { showToast('❌ Isi semua field!','error');               playSound('error'); return; }
+  if (age<10||age>60)                    { showToast('❌ Usia 10–60 tahun!','error');              playSound('error'); return; }
+
+  // ---- ANTI-DUPLIKAT ID FF ----
+  try {
+    const resp       = await fetch(API);
+    const serverData = await resp.json();
+    const isDuplikat = serverData.some(d => String(d.ffId) === ffid);
+    if (isDuplikat) {
+      showFieldError('ffIdError', '❌ ID FF sudah digunakan!');
+      showToast('❌ ID FF sudah ada di database!', 'error');
+      playSound('error');
+      return;
+    }
+  } catch(e) {
+    showToast('⚠️ Tidak bisa cek duplikat, coba lagi', 'warning');
+    return;
+  }
+
+  const newData = {
+    ffId: ffid, namaInGame: ingame, namaReal: realname,
+    levelAkun: parseInt(level), usia: age, kota: city,
+    tanggal: new Date().toLocaleDateString('id-ID'),
+    waktu:   new Date().toLocaleTimeString('id-ID')
+  };
+
+  fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(newData)
+  })
+  .then(r => r.json())
+  .then(() => {
+    // Kunci device, simpan ffId untuk reset-check
+    localStorage.setItem(DEVICE_INTRO_KEY, JSON.stringify({ time: Date.now(), ffId: ffid }));
+    clearFormDraft();
+    showToast('✅ Intro berhasil dikirim!', 'success'); playSound('success');
+    lockForm();
+  })
+  .catch(() => { showToast('❌ Gagal kirim ke server', 'error'); playSound('error'); });
+}
+
+// =======================================
+// SSE REALTIME
+// =======================================
+function startSSE() {
+  if (sseSource) sseSource.close();
+  sseSource = new EventSource(`${API}/stream`);
+
+  sseSource.addEventListener('new_intro', e => {
+    const item = JSON.parse(e.data);
+    if (!allData.find(d => d._id === item._id)) {
+      allData.unshift(item);
+      updateStats(); renderList(); populateCityFilter();
+      setTimeout(() => {
+        const el = document.getElementById(`item-${item._id}`);
+        if (el) el.classList.add('new-item');
+      }, 50);
+      showToast(`🆕 Intro baru: ${item.namaInGame}`, 'success');
+      playSound('success');
+      if (currentRole === 'admin') addLog('add', `Baru: ${item.namaInGame} (${item.ffId})`, '🆕');
+    }
+  });
+
+  sseSource.addEventListener('delete_intro', e => {
+    const { _id } = JSON.parse(e.data);
+    allData = allData.filter(d => d._id !== _id);
+    updateStats(); renderList(); populateCityFilter();
+  });
+
+  sseSource.onerror = () => {
+    sseSource.close();
+    setTimeout(() => {
+      if (currentRole === 'admin' || currentRole === 'mod') startSSE();
+    }, 5000);
+  };
+}
+
+// =======================================
+// LOAD DATA (with skeleton)
+// =======================================
+function showSkeleton() {
+  document.getElementById('dataList').innerHTML = [1,2,3].map(() => `
+    <div class="skeleton-card">
+      <div class="skel-title skeleton"></div>
+      <div class="skel-grid">
+        <div class="skel-cell skeleton"></div>
+        <div class="skel-cell skeleton"></div>
+        <div class="skel-cell skeleton"></div>
+        <div class="skel-cell skeleton"></div>
+      </div>
+      <div class="skel-ts skeleton"></div>
+    </div>
+  `).join('');
+}
+
+function loadData(withSkeleton = false) {
+  if (withSkeleton) showSkeleton();
+  fetch(API)
+    .then(r => r.json())
+    .then(data => { allData = data; updateStats(); renderList(); populateCityFilter(); })
+    .catch(() => showToast('⚠️ Gagal ambil data', 'error'));
+}
+
+// =======================================
+// STATS
+// =======================================
+function updateStats() {
+  document.getElementById('stTotal').textContent = allData.length;
+  if (!allData.length) {
+    ['stAvgAge','stAvgLvl','stTopCity'].forEach(id => document.getElementById(id).textContent = '-');
+    return;
+  }
+  const avgAge = (allData.reduce((a,b) => a + (b.usia     || 0), 0) / allData.length).toFixed(1);
+  const avgLvl = (allData.reduce((a,b) => a + (b.levelAkun|| 0), 0) / allData.length).toFixed(0);
+  const cityCount = {};
+  allData.forEach(d => { cityCount[d.kota] = (cityCount[d.kota] || 0) + 1; });
+  const topCity = Object.entries(cityCount).sort((a,b) => b[1]-a[1])[0]?.[0] || '-';
+  document.getElementById('stAvgAge').textContent  = avgAge;
+  document.getElementById('stAvgLvl').textContent  = 'Lv' + avgLvl;
+  document.getElementById('stTopCity').textContent = topCity;
+}
+
+// =======================================
+// CITY FILTER
+// =======================================
+function populateCityFilter() {
+  const sel  = document.getElementById('filterCity');
+  const prev = sel.value;
+  const cities = [...new Set(allData.map(d => d.kota).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">Semua Kota</option>'
+    + cities.map(c => `<option value="${c}">${c}</option>`).join('');
+  sel.value = prev;
+}
+
+// =======================================
+// RENDER LIST
+// =======================================
+function renderList() {
+  const q     = document.getElementById('searchInput').value.toLowerCase();
+  const fCity = document.getElementById('filterCity').value;
+  const fLvl  = document.getElementById('filterLevel').value;
+  const isAdmin = currentRole === 'admin';
+  const isMod   = currentRole === 'mod';
+
+  const filtered = allData.filter(d => {
+    const match  = !q || [d.namaInGame, d.namaReal, d.ffId, d.kota].some(v => String(v).toLowerCase().includes(q));
+    const cityOk = !fCity || d.kota === fCity;
+    let lvlOk = true;
+    if (fLvl === '1-50')   lvlOk = d.levelAkun <= 50;
+    else if (fLvl === '51-100') lvlOk = d.levelAkun >= 51 && d.levelAkun <= 100;
+    else if (fLvl === '101+')   lvlOk = d.levelAkun > 100;
+    return match && cityOk && lvlOk;
+  });
+
+  const list = document.getElementById('dataList');
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty">📭 Tidak ada data ditemukan</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(item => `
+    <div class="intro-item" id="item-${item._id}">
+      <div class="card-actions">
+        ${(isAdmin || isMod) ? `<button class="edit-btn" onclick="openEditModal('${item._id}')" title="Edit">✏️</button>` : ''}
+        ${isAdmin            ? `<button class="delete-btn" onclick="openModal('${item._id}','${escHtml(item.namaInGame)}')" title="Hapus">🗑️</button>` : ''}
+      </div>
+      <div class="player-name">
+        ⚔️ ${escHtml(item.namaInGame)}
+        <span style="font-size:.75em;opacity:.7">(${escHtml(item.namaReal)})</span>
+      </div>
+      <div class="player-info">
+        <div class="info-item"><div class="info-label">ID FF</div><div class="info-value">${escHtml(String(item.ffId))}</div></div>
+        <div class="info-item"><div class="info-label">Level</div><div class="info-value">Lv.${item.levelAkun}</div></div>
+        <div class="info-item"><div class="info-label">Usia</div><div class="info-value">${item.usia} thn</div></div>
+        <div class="info-item"><div class="info-label">Kota</div><div class="info-value">${escHtml(item.kota)}</div></div>
+      </div>
+      <div class="timestamp">📅 ${item.tanggal} ⏰ ${item.waktu}</div>
+    </div>
+  `).join('');
+}
+
+function resetFilter() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('filterCity').value  = '';
+  document.getElementById('filterLevel').value = '';
+  renderList(); playSound('click');
+}
+
+// =======================================
+// DELETE
+// =======================================
+function confirmDelete() {
+  if (!pendingDeleteId) return;
+  const id   = pendingDeleteId;
+  const item = allData.find(d => d._id === id);
+  fetch(`${API}/${id}`, { method: 'DELETE' })
+    .then(() => {
+      allData = allData.filter(d => d._id !== id);
+      updateStats(); renderList(); populateCityFilter();
+      showToast('🗑️ Data berhasil dihapus', 'success'); playSound('delete');
+      addLog('delete', `Hapus: ${item?.namaInGame} (${item?.ffId})`, '🗑️');
+    })
+    .catch(() => { showToast('❌ Gagal hapus data', 'error'); playSound('error'); });
+  pendingDeleteId = null;
+}
+
+// =======================================
+// ACTIVITY LOG (Feature #7)
+// =======================================
+const LOG_KEY = 'ff_activity_log';
+
+function addLog(type, text, icon) {
+  const logs = getLogs();
+  logs.unshift({ type, text, icon, time: new Date().toLocaleTimeString('id-ID') });
+  if (logs.length > 100) logs.pop();
+  localStorage.setItem(LOG_KEY, JSON.stringify(logs));
+  renderActivityLog();
+}
+
+function getLogs() {
+  try { return JSON.parse(localStorage.getItem(LOG_KEY)) || []; }
+  catch { return []; }
+}
+
+function renderActivityLog() {
+  const logs = getLogs();
+  const el   = document.getElementById('logList');
+  if (!el) return;
+  if (!logs.length) {
+    el.innerHTML = '<div class="log-empty">Belum ada aktivitas tercatat</div>';
+    return;
+  }
+  el.innerHTML = logs.map(l => `
+    <div class="log-item log-${l.type}">
+      <span class="log-icon">${l.icon}</span>
+      <span class="log-text">${escHtml(l.text)}</span>
+      <span class="log-time">${l.time}</span>
+    </div>
+  `).join('');
+}
+
+function clearActivityLog() {
+  localStorage.removeItem(LOG_KEY);
+  renderActivityLog();
+  showToast('🗑️ Log dibersihkan', 'info'); playSound('click');
+}
+
+// =======================================
+// EXPORT CSV (Feature #2)
+// =======================================
+function exportCSV() {
+  if (!allData.length) { showToast('⚠️ Tidak ada data untuk di-export!', 'warning'); return; }
+  const headers = ['No','ID FF','Nama InGame','Nama Asli','Level','Usia','Kota','Tanggal','Waktu'];
+  const rows    = allData.map((d, i) => [
+    i+1, d.ffId, d.namaInGame, d.namaReal, d.levelAkun, d.usia, d.kota, d.tanggal, d.waktu
+  ]);
+  const csv  = [headers, ...rows]
+    .map(r => r.map(v => `"${String(v || '').replace(/"/g, '""')}"`).join(','))
+    .join('\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'data-intro.csv'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('📄 CSV berhasil di-export!', 'success'); playSound('success');
+  addLog('export', `Export CSV (${allData.length} data)`, '📄');
+}
+
+// =======================================
+// EXPORT EXCEL (Feature #2)
+// =======================================
+function exportExcel() {
+  if (!allData.length) { showToast('⚠️ Tidak ada data untuk di-export!', 'warning'); return; }
+  if (typeof XLSX === 'undefined') { showToast('❌ Library XLSX belum siap, coba refresh', 'error'); return; }
+
+  const wsData = [
+    ['No','ID FF','Nama InGame','Nama Asli','Level','Usia','Kota','Tanggal','Waktu'],
+    ...allData.map((d, i) => [
+      i+1, d.ffId, d.namaInGame, d.namaReal, d.levelAkun, d.usia, d.kota, d.tanggal, d.waktu
+    ])
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = [6,14,16,18,8,8,16,12,10].map(w => ({ wch: w }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Data Intro FF');
+  XLSX.writeFile(wb, 'data-intro.xlsx');
+  showToast('📊 Excel berhasil di-export!', 'success'); playSound('success');
+  addLog('export', `Export Excel (${allData.length} data)`, '📊');
+}
+
+// =======================================
+// LOGOUT
+// =======================================
+function doLogout() {
+  playSound('click');
+  if (sseSource) { sseSource.close(); sseSource = null; }
+  localStorage.removeItem('ff_remember');
+  currentUser = null; currentRole = null; allData = [];
+  ['loginUserName','loginAdminUser','loginAdminPass','loginModUser','loginModPass'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  ['rememberUser','rememberAdmin'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.checked = false;
+  });
+  document.getElementById('navTabs').style.display  = 'none';
+  document.getElementById('exportRow').style.display = 'none';
+  showSection('loginSection');
+  showToast('👋 Logout berhasil', 'info');
+}
+
+// =======================================
+// UTIL
+// =======================================
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+// =======================================
+// ENTER KEY SHORTCUTS
+// =======================================
+document.getElementById('loginAdminUser').addEventListener('keydown', e => { if(e.key==='Enter') doLoginAdmin(); });
+document.getElementById('loginAdminPass').addEventListener('keydown', e => { if(e.key==='Enter') doLoginAdmin(); });
+document.getElementById('loginUserName').addEventListener('keydown',  e => { if(e.key==='Enter') doLoginUser();  });
+document.getElementById('loginModUser').addEventListener('keydown',   e => { if(e.key==='Enter') doLoginMod();   });
+document.getElementById('loginModPass').addEventListener('keydown',   e => { if(e.key==='Enter') doLoginMod();   });
+
+// =======================================
+// INIT
+// =======================================
+checkAutoLogin();
+</script>
+</body>
+</html>

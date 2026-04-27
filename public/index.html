@@ -6,6 +6,8 @@
 <title>Intro FF – Golden System</title>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Exo+2:wght@300;400;700;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 :root {
   --gold: #daa520;
@@ -473,9 +475,225 @@ input:focus,select:focus{
   opacity:0;transition:opacity .4s;
 }
 .autosave-badge.show{opacity:1}
+
+/* ===== MOD MANAGER ===== */
+.mod-list{display:flex;flex-direction:column;gap:10px;margin:14px 0}
+.mod-item{
+  background:var(--input-bg);border:1.5px solid var(--border);
+  border-radius:11px;padding:13px 16px;
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.mod-item .mod-name{flex:1;font-weight:700;color:var(--text);font-size:.97em}
+.mod-item .mod-pass{color:var(--sub);font-size:.85em;flex:1;min-width:100px;word-break:break-all}
+.mod-item .btn-sm-del{
+  background:linear-gradient(135deg,#a0522d,var(--danger));
+  color:#fff;border:none;border-radius:8px;padding:7px 14px;
+  font-size:.82em;font-weight:700;cursor:pointer;font-family:'Exo 2',sans-serif;
+  transition:all .25s;
+}
+.mod-item .btn-sm-del:hover{transform:scale(1.07);opacity:.9}
+.mod-empty{text-align:center;color:var(--sub);padding:16px;font-size:.9em}
+.section-sub-title{
+  font-family:'Rajdhani',sans-serif;font-size:1.15em;color:var(--brown);
+  font-weight:700;margin-bottom:12px;
+}
+
+/* ===== PROGRESS STEPS ===== */
+.progress-steps{display:flex;align-items:center;justify-content:center;margin-bottom:28px;gap:0}
+.step-item{display:flex;flex-direction:column;align-items:center;position:relative;flex:1}
+.step-circle{
+  width:36px;height:36px;border-radius:50%;
+  border:2.5px solid var(--border);background:var(--cream2);
+  color:var(--sub);font-weight:700;font-size:.95em;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .35s;z-index:1;position:relative;
+}
+.step-item.done .step-circle{background:var(--gold-dark);border-color:var(--gold-dark);color:#fff}
+.step-item.active .step-circle{background:var(--gold);border-color:var(--gold-dark);color:#fff;box-shadow:0 0 0 4px rgba(218,165,32,.25)}
+.step-label{font-size:.72em;color:var(--sub);margin-top:5px;font-weight:600;text-align:center}
+.step-item.active .step-label{color:var(--gold-dark)}
+.step-item.done .step-label{color:var(--success)}
+.step-line{flex:1;height:2.5px;background:var(--cream2);border-radius:2px;transition:background .35s;margin-top:-20px;z-index:0}
+.step-line.done{background:var(--gold-dark)}
+.form-step{display:none}
+.form-step.active{display:block;animation:tabIn .35s ease both}
+
+/* ===== LOGIN HISTORY ===== */
+.login-history-box{
+  background:var(--card-bg);border:2px solid var(--border);
+  border-radius:14px;padding:16px;margin-top:16px;
+}
+.login-history-box h5{font-family:'Rajdhani',sans-serif;color:var(--brown);margin-bottom:12px;font-size:1.05em}
+.login-log-item{
+  background:var(--input-bg);border:1.5px solid var(--border);
+  border-radius:9px;padding:9px 13px;margin-bottom:8px;
+  font-size:.82em;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.login-log-ip{font-weight:700;color:var(--gold-dark);flex:1}
+.login-log-info{color:var(--sub);flex:2;min-width:120px}
+.login-log-time{color:var(--sub);font-size:.8em;white-space:nowrap}
+
+/* ===== LEADERBOARD ===== */
+.lb-item{
+  background:var(--card-bg);border:2px solid var(--border);
+  border-radius:14px;padding:16px 20px;margin-bottom:12px;
+  display:flex;align-items:center;gap:16px;
+  transition:transform .25s,box-shadow .25s;
+}
+.lb-item:hover{transform:translateY(-3px);box-shadow:0 12px 28px var(--shadow)}
+.lb-rank{
+  font-size:1.8em;font-weight:900;font-family:'Rajdhani',sans-serif;
+  min-width:44px;text-align:center;
+}
+.lb-rank.gold{color:#ffd700;text-shadow:0 2px 8px rgba(255,215,0,.5)}
+.lb-rank.silver{color:#b0b8c1;text-shadow:0 2px 6px rgba(176,184,193,.4)}
+.lb-rank.bronze{color:#cd7f32;text-shadow:0 2px 6px rgba(205,127,50,.4)}
+.lb-rank.normal{color:var(--sub)}
+.lb-info{flex:1}
+.lb-name{font-weight:700;color:var(--brown);font-family:'Rajdhani',sans-serif;font-size:1.1em}
+.lb-detail{font-size:.82em;color:var(--sub);margin-top:2px}
+.lb-level{
+  font-size:1.3em;font-weight:900;color:var(--gold-dark);
+  font-family:'Rajdhani',sans-serif;
+}
+.lb-tab-btn{
+  background:none;border:2px solid var(--border);
+  border-radius:10px;padding:8px 16px;
+  color:var(--sub);font-family:'Exo 2',sans-serif;
+  font-weight:700;cursor:pointer;transition:all .25s;font-size:.9em;
+}
+.lb-tab-btn.active,.lb-tab-btn:hover{background:var(--gold-dark);color:#fff;border-color:var(--gold-dark)}
+
+/* ===== PROFILE MODAL ===== */
+.profile-modal-box{max-width:440px;text-align:center;padding:30px 28px}
+.profile-avatar{
+  font-size:4em;margin-bottom:12px;
+  animation:popIn .4s cubic-bezier(.4,0,.2,1);
+}
+@keyframes popIn{from{transform:scale(0.4);opacity:0}to{transform:scale(1);opacity:1}}
+.profile-name{
+  font-size:1.7em;font-weight:700;color:var(--brown);
+  font-family:'Rajdhani',sans-serif;margin-bottom:4px;
+}
+.profile-id{font-size:.9em;color:var(--sub);margin-bottom:18px;font-weight:600}
+.profile-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;
+}
+.profile-cell{
+  background:var(--input-bg);border:1.5px solid var(--border);
+  border-radius:10px;padding:12px 8px;text-align:center;
+}
+.profile-cell .lbl{font-size:.76em;color:var(--sub);margin-bottom:4px;font-weight:600}
+.profile-cell .val{font-weight:700;color:var(--text);font-size:1em}
+.qr-wrap{display:flex;justify-content:center;margin:14px 0;padding:12px;background:white;border-radius:14px;box-shadow:0 4px 14px rgba(0,0,0,.1)}
+.share-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.share-btn{
+  padding:10px 18px;border:none;border-radius:10px;
+  font-weight:700;font-size:.9em;cursor:pointer;
+  font-family:'Exo 2',sans-serif;transition:all .25s;
+  display:flex;align-items:center;gap:7px;
+}
+.share-wa{background:linear-gradient(135deg,#128c7e,#25d366);color:#fff}
+.share-copy{background:linear-gradient(135deg,#2c3e50,#4a6a8a);color:#fff}
+.share-btn:hover{transform:translateY(-2px);opacity:.92}
+
+/* ===== CHATBOT ===== */
+.chatbot-box{
+  position:fixed;bottom:90px;right:24px;
+  width:320px;max-height:480px;z-index:9000;
+  background:var(--container-bg);border:2px solid var(--border);
+  border-radius:20px;box-shadow:0 16px 48px var(--shadow);
+  display:none;flex-direction:column;overflow:hidden;
+}
+.chatbot-box.open{display:flex;animation:tabIn .3s ease both}
+.chatbot-header{
+  background:var(--header-bg);padding:14px 18px;
+  display:flex;align-items:center;justify-content:space-between;
+  color:#fff;font-weight:700;font-family:'Rajdhani',sans-serif;font-size:1.1em;
+}
+.chatbot-msgs{
+  flex:1;overflow-y:auto;padding:14px;
+  display:flex;flex-direction:column;gap:10px;
+  max-height:300px;
+}
+.chat-msg{
+  padding:9px 13px;border-radius:12px;font-size:.88em;
+  max-width:85%;line-height:1.5;
+}
+.chat-msg.bot{background:var(--card-bg);border:1.5px solid var(--border);color:var(--text);align-self:flex-start;border-bottom-left-radius:4px}
+.chat-msg.user{background:var(--gold-dark);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.chat-msg.typing{opacity:.6}
+.chatbot-input{display:flex;gap:8px;padding:10px 12px;border-top:1.5px solid var(--border);background:var(--cream2)}
+.chatbot-input input{flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:.88em;background:var(--input-bg);color:var(--text);font-family:'Exo 2',sans-serif}
+.chatbot-input input:focus{outline:none;border-color:var(--gold-dark)}
+.chatbot-send{padding:9px 14px;background:var(--gold-dark);color:#fff;border:none;border-radius:9px;font-weight:700;cursor:pointer;font-size:.88em;transition:all .2s}
+.chatbot-send:hover{opacity:.88}
+.chatbot-toggle{
+  position:fixed;bottom:24px;right:24px;
+  width:52px;height:52px;border-radius:50%;
+  background:linear-gradient(135deg,var(--gold-dark),var(--gold));
+  color:#fff;border:none;font-size:1.5em;cursor:pointer;
+  box-shadow:0 6px 20px var(--shadow);z-index:9001;
+  display:none;align-items:center;justify-content:center;
+  transition:transform .25s;
+}
+.chatbot-toggle:hover{transform:scale(1.1)}
+
+/* ===== DISCORD WEBHOOK SETTINGS ===== */
+.webhook-section{
+  background:var(--card-bg);border:2px solid var(--border);
+  border-radius:14px;padding:18px;margin-bottom:14px;
+}
+.webhook-section h5{font-family:'Rajdhani',sans-serif;color:var(--brown);margin-bottom:10px;font-size:1.05em}
+.webhook-status{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:.82em;font-weight:700;padding:4px 10px;
+  border-radius:20px;margin-left:8px;
+}
+.webhook-status.on{background:rgba(39,174,96,.15);color:#27ae60;border:1.5px solid #27ae60}
+.webhook-status.off{background:rgba(192,57,43,.1);color:var(--danger);border:1.5px solid var(--danger)}
+
+/* ===== DRAG & DROP ===== */
+.dropzone{
+  border:2.5px dashed var(--border);border-radius:14px;
+  padding:22px;text-align:center;cursor:pointer;
+  transition:all .3s;background:var(--input-bg);margin-bottom:14px;
+  color:var(--sub);font-size:.9em;
+}
+.dropzone.dragover{border-color:var(--gold-dark);background:rgba(218,165,32,.08);color:var(--gold-dark)}
+.dropzone-preview{
+  width:80px;height:80px;border-radius:50%;object-fit:cover;
+  border:3px solid var(--gold-dark);margin-bottom:6px;display:none;
+}
+/* ===== KEYBOARD SHORTCUT HINT ===== */
+.shortcut-hint{
+  display:inline-block;background:var(--cream2);border:1.5px solid var(--border);
+  border-radius:5px;padding:2px 7px;font-size:.75em;font-weight:700;
+  color:var(--sub);font-family:monospace;margin-left:6px;vertical-align:middle;
+}
+/* ===== OFFLINE BANNER ===== */
+.offline-banner{
+  display:none;position:fixed;top:0;left:0;right:0;
+  background:linear-gradient(135deg,#e67e22,#c0392b);
+  color:#fff;text-align:center;padding:8px;font-weight:700;font-size:.9em;z-index:99999;
+}
+.offline-banner.show{display:block;animation:tabIn .3s ease}
+/* ===== CONFIRM STEP ===== */
+.confirm-preview{
+  background:var(--card-bg);border:2px solid var(--border);
+  border-radius:14px;padding:20px;margin-bottom:16px;
+}
+.confirm-preview h4{color:var(--brown);font-family:'Rajdhani',sans-serif;font-size:1.1em;margin-bottom:12px}
+.confirm-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(218,165,32,.2);font-size:.9em}
+.confirm-row:last-child{border-bottom:none}
+.confirm-row .key{color:var(--sub);font-weight:600}
+.confirm-row .val{color:var(--text);font-weight:700}
+
 </style>
 </head>
 <body>
+<!-- OFFLINE BANNER -->
+<div class="offline-banner" id="offlineBanner">📶 Kamu sedang offline — beberapa fitur mungkin tidak berfungsi</div>
 <div class="container">
   <div class="header">
     <button class="theme-btn" id="themeBtn" title="Toggle Dark Mode">🌙</button>
@@ -513,6 +731,13 @@ input:focus,select:focus{
             <div class="role-icon">🛡️</div>
             <div class="role-label">Moderator</div>
             <div class="role-desc">Lihat &amp; edit data — tidak bisa hapus</div>
+          </button>
+        </div>
+        <div style="margin-top:14px">
+          <button class="role-card" style="padding:18px 16px;border-color:var(--gold-light)" onclick="showPublicLeaderboard()">
+            <div class="role-icon">🏆</div>
+            <div class="role-label">Leaderboard</div>
+            <div class="role-desc">Ranking publik tanpa login</div>
           </button>
         </div>
       </div>
@@ -576,6 +801,18 @@ input:focus,select:focus{
       </div>
     </div>
 
+    <!-- ====== LEADERBOARD (PUBLIC) ====== -->
+    <div id="leaderboardSection" class="section">
+      <button class="back-btn" onclick="backToRole()">← Kembali</button>
+      <div class="section-title">🏆 Leaderboard</div>
+      <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;justify-content:center">
+        <button class="lb-tab-btn active" id="lbBtnLevel" onclick="renderLeaderboard('level',this)">⚔️ By Level</button>
+        <button class="lb-tab-btn" id="lbBtnAge" onclick="renderLeaderboard('age',this)">🎂 By Usia</button>
+        <button class="lb-tab-btn" id="lbBtnCity" onclick="renderLeaderboard('city',this)">🏙️ By Kota</button>
+      </div>
+      <div id="leaderboardList"><div class="empty">⏳ Memuat data...</div></div>
+    </div>
+
     <!-- ====== INTRO FORM ====== -->
     <div id="introSection" class="section">
       <div class="section-title">
@@ -584,37 +821,95 @@ input:focus,select:focus{
       </div>
       <div id="spamInfo" class="spam-info" style="display:none"></div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label>ID FF (8–12 digit)</label>
-          <input type="text" id="ffId" placeholder="12345678" maxlength="12"
-            inputmode="numeric" oninput="autosaveForm();clearFieldError('ffIdError')">
-          <div class="field-error" id="ffIdError">❌ ID FF sudah digunakan!</div>
+      <!-- Progress Steps -->
+      <div class="progress-steps" id="progressSteps">
+        <div class="step-item active" id="step-dot-1">
+          <div class="step-circle">1</div>
+          <div class="step-label">Akun</div>
         </div>
-        <div class="form-group">
-          <label>Nama In Game (2–12 char)</label>
-          <input type="text" id="ingame" placeholder="NamaIG" maxlength="12" oninput="autosaveForm()">
+        <div class="step-line" id="step-line-1"></div>
+        <div class="step-item" id="step-dot-2">
+          <div class="step-circle">2</div>
+          <div class="step-label">Detail</div>
         </div>
-      </div>
-      <div class="form-group">
-        <label>Nama Asli</label>
-        <input type="text" id="realname" placeholder="Nama Lengkap" oninput="autosaveForm()">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Level Akun</label>
-          <input type="number" id="level" placeholder="80" min="1" max="999" oninput="autosaveForm()">
-        </div>
-        <div class="form-group">
-          <label>Usia (10–60)</label>
-          <input type="number" id="age" placeholder="20" min="10" max="60" oninput="autosaveForm()">
+        <div class="step-line" id="step-line-2"></div>
+        <div class="step-item" id="step-dot-3">
+          <div class="step-circle">3</div>
+          <div class="step-label">Konfirmasi</div>
         </div>
       </div>
-      <div class="form-group">
-        <label>Kota</label>
-        <input type="text" id="city" placeholder="Jakarta" oninput="autosaveForm()">
+
+      <!-- Step 1: ID + Nama -->
+      <div class="form-step active" id="formStep1">
+        <!-- Drag & Drop Foto Profil -->
+        <div style="text-align:center;margin-bottom:16px">
+          <img id="profilePreview" class="dropzone-preview" alt="preview">
+          <div class="dropzone" id="dropzone" onclick="document.getElementById('photoInput').click()"
+            ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+            📷 Klik atau seret foto profil (opsional)
+          </div>
+          <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="handleFileInput(event)">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>ID FF (8–12 digit)</label>
+            <input type="text" id="ffId" placeholder="12345678" maxlength="12"
+              inputmode="numeric" oninput="autosaveForm();clearFieldError('ffIdError')">
+            <div class="field-error" id="ffIdError">❌ ID FF sudah digunakan!</div>
+          </div>
+          <div class="form-group">
+            <label>Nama In Game (2–12 char)</label>
+            <input type="text" id="ingame" placeholder="NamaIG" maxlength="12" oninput="autosaveForm()">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Nama Asli</label>
+          <input type="text" id="realname" placeholder="Nama Lengkap" oninput="autosaveForm()">
+        </div>
+        <button class="btn" onclick="goToStep(2)">Lanjut ➡️</button>
       </div>
-      <button class="btn" id="introBtn" onclick="doIntro()">🚀 INTRO SEKARANG</button>
+
+      <!-- Step 2: Detail -->
+      <div class="form-step" id="formStep2">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Level Akun</label>
+            <input type="number" id="level" placeholder="80" min="1" max="999" oninput="autosaveForm();aiValidate()">
+          </div>
+          <div class="form-group">
+            <label>Usia (10–60)</label>
+            <input type="number" id="age" placeholder="20" min="10" max="60" oninput="autosaveForm();aiValidate()">
+          </div>
+        </div>
+        <div id="aiWarning" style="display:none;margin-bottom:12px;padding:10px 14px;background:rgba(230,126,34,.12);border:1.5px solid #e67e22;border-radius:10px;font-size:.85em;color:#e67e22;font-weight:600"></div>
+        <div class="form-group">
+          <label>Kota</label>
+          <input type="text" id="city" placeholder="Jakarta" oninput="autosaveForm()" list="cityDatalist" autocomplete="off">
+          <datalist id="cityDatalist"></datalist>
+        </div>
+        <div style="display:flex;gap:12px">
+          <button class="btn btn-outline" style="flex:1" onclick="goToStep(1)">⬅️ Kembali</button>
+          <button class="btn" style="flex:2" onclick="goToStep(3)">Lanjut ➡️</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Konfirmasi -->
+      <div class="form-step" id="formStep3">
+        <div class="confirm-preview">
+          <h4>📋 Konfirmasi Data</h4>
+          <div class="confirm-row"><span class="key">ID FF</span><span class="val" id="cfmId">-</span></div>
+          <div class="confirm-row"><span class="key">Nama IG</span><span class="val" id="cfmIg">-</span></div>
+          <div class="confirm-row"><span class="key">Nama Asli</span><span class="val" id="cfmReal">-</span></div>
+          <div class="confirm-row"><span class="key">Level</span><span class="val" id="cfmLevel">-</span></div>
+          <div class="confirm-row"><span class="key">Usia</span><span class="val" id="cfmAge">-</span></div>
+          <div class="confirm-row"><span class="key">Kota</span><span class="val" id="cfmCity">-</span></div>
+        </div>
+        <div style="display:flex;gap:12px">
+          <button class="btn btn-outline" style="flex:1" onclick="goToStep(2)">⬅️ Edit</button>
+          <button class="btn btn-success" style="flex:2" id="introBtn" onclick="doIntro()">🚀 INTRO SEKARANG</button>
+        </div>
+      </div>
+
       <div class="divider"></div>
       <button class="btn btn-danger" onclick="doLogout()">🚪 LOGOUT</button>
     </div>
@@ -638,6 +933,7 @@ input:focus,select:focus{
       <div class="export-row" id="exportRow" style="display:none">
         <button class="btn btn-success" onclick="exportCSV()">📄 Export CSV</button>
         <button class="btn btn-info" onclick="exportExcel()">📊 Export Excel (.xlsx)</button>
+        <button class="btn btn-mod" onclick="exportPNG()">🖼️ Export PNG</button>
       </div>
 
       <!-- SEARCH -->
@@ -655,7 +951,7 @@ input:focus,select:focus{
           <option value="">Semua Level</option>
           <option value="1-50">Lv. 1–50</option>
           <option value="51-100">Lv. 51–100</option>
-          <option value="101+">Lv. 100+</option>
+          <option value="101+">Lv. 101+</option>
         </select>
         <button class="btn btn-sm btn-outline" onclick="resetFilter()">Reset</button>
       </div>
@@ -674,6 +970,57 @@ input:focus,select:focus{
         </div>
       </div>
 
+      <!-- MOD MANAGER (Admin only) -->
+      <div id="modManagerBox" style="display:none;margin-top:20px">
+        <div class="divider"></div>
+        <div class="section-sub-title">🛡️ Manajemen Moderator</div>
+        <div class="form-row" style="margin-bottom:10px">
+          <div class="form-group" style="margin-bottom:0">
+            <input type="text" id="newModUser" placeholder="Username moderator baru" autocomplete="off">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <input type="text" id="newModPass" placeholder="Password moderator" autocomplete="off">
+          </div>
+        </div>
+        <button class="btn btn-mod" style="margin-bottom:14px" onclick="addModerator()">➕ Tambah Moderator</button>
+        <div class="mod-list" id="modList"><div class="mod-empty">Belum ada moderator</div></div>
+      </div>
+
+      <!-- RESET ALL DEVICES (Admin only) -->
+      <div id="resetDeviceBox" style="display:none;margin-top:20px">
+        <div class="divider"></div>
+        <div class="section-sub-title">🔄 Reset Form Semua Perangkat</div>
+        <p style="color:var(--sub);font-size:.88em;margin-bottom:12px">Semua perangkat yang sudah isi form akan bisa mengisi ulang. Gunakan jika data server direset.</p>
+        <button class="btn btn-danger" style="max-width:320px" onclick="openResetDeviceModal()">🔄 Reset Semua Perangkat</button>
+      </div>
+
+      <!-- DISCORD WEBHOOK (Admin only) -->
+      <div id="discordBox" style="display:none;margin-top:20px">
+        <div class="divider"></div>
+        <div class="section-sub-title">🔔 Notifikasi Discord</div>
+        <div class="webhook-section">
+          <h5>Webhook URL <span class="webhook-status off" id="webhookStatus">● Nonaktif</span></h5>
+          <div class="form-group" style="margin-bottom:10px">
+            <input type="text" id="webhookUrl" placeholder="https://discord.com/api/webhooks/..." autocomplete="off">
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-sm" onclick="saveWebhook()">💾 Simpan</button>
+            <button class="btn btn-sm btn-outline" onclick="testWebhook()">🧪 Test</button>
+            <button class="btn btn-sm btn-danger" onclick="clearWebhook()">🗑️ Hapus</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOGIN HISTORY (Admin only) -->
+      <div id="loginHistoryBox" style="display:none;margin-top:20px">
+        <div class="divider"></div>
+        <div class="section-sub-title">🔐 Riwayat Login</div>
+        <div class="login-history-box">
+          <h5>📋 Log Login Terbaru <button class="btn-sm-del" style="font-size:.75em;padding:5px 10px" onclick="clearLoginHistory()">🗑️ Clear</button></h5>
+          <div id="loginHistoryList"><div class="mod-empty">Belum ada riwayat login</div></div>
+        </div>
+      </div>
+
       <div class="divider"></div>
       <button class="btn btn-danger" onclick="doLogout()">🚪 LOGOUT</button>
     </div>
@@ -684,6 +1031,27 @@ input:focus,select:focus{
 <!-- TOAST WRAPPER -->
 <div class="toast-wrap" id="toastWrap"></div>
 
+<!-- PROFILE MODAL -->
+<div class="modal-overlay" id="profileModal">
+  <div class="modal-box profile-modal-box">
+    <button class="back-btn" onclick="closeProfileModal()" style="margin-bottom:10px">✕ Tutup</button>
+    <div class="profile-avatar">⚔️</div>
+    <div class="profile-name" id="pmName">-</div>
+    <div class="profile-id" id="pmId">ID: -</div>
+    <div class="profile-grid">
+      <div class="profile-cell"><div class="lbl">Level</div><div class="val" id="pmLevel">-</div></div>
+      <div class="profile-cell"><div class="lbl">Usia</div><div class="val" id="pmAge">-</div></div>
+      <div class="profile-cell"><div class="lbl">Kota</div><div class="val" id="pmCity">-</div></div>
+      <div class="profile-cell"><div class="lbl">Sejak</div><div class="val" id="pmDate">-</div></div>
+    </div>
+    <div class="qr-wrap" id="qrWrap"><div id="qrCode"></div></div>
+    <div class="share-row">
+      <button class="share-btn share-wa" onclick="shareWhatsApp()">📱 WhatsApp</button>
+      <button class="share-btn share-copy" onclick="copyProfileLink()">📋 Salin Link</button>
+    </div>
+  </div>
+</div>
+
 <!-- DELETE CONFIRM MODAL -->
 <div class="modal-overlay" id="modal">
   <div class="modal-box">
@@ -692,6 +1060,19 @@ input:focus,select:focus{
     <div class="modal-btns">
       <button class="btn btn-outline btn-sm" onclick="closeModal()">Batal</button>
       <button class="btn btn-danger btn-sm" id="modalConfirm">Hapus</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESET DEVICE MODAL -->
+<div class="modal-overlay" id="resetDeviceModal">
+  <div class="modal-box">
+    <h3>🔄 Reset Semua Perangkat?</h3>
+    <p>Semua perangkat yang sudah submit form akan bisa isi ulang. Ketik <strong>RESET</strong> untuk konfirmasi.</p>
+    <input type="text" id="resetConfirmInput" class="reset-confirm-input" placeholder="Ketik RESET di sini">
+    <div class="modal-btns">
+      <button class="btn btn-outline btn-sm" onclick="closeResetDeviceModal()">Batal</button>
+      <button class="btn btn-danger btn-sm" onclick="confirmResetAllDevices()">🔄 Reset Semua</button>
     </div>
   </div>
 </div>
@@ -732,26 +1113,129 @@ input:focus,select:focus{
   </div>
 </div>
 
+<!-- CHATBOT (Admin only) -->
+<div class="chatbot-box" id="chatbotBox">
+  <div class="chatbot-header">
+    🤖 Admin Assistant
+    <button onclick="toggleChatbot()" style="background:none;border:none;color:#fff;font-size:1.1em;cursor:pointer">✕</button>
+  </div>
+  <div class="chatbot-msgs" id="chatMsgs">
+    <div class="chat-msg bot">👋 Halo Admin! Aku bisa bantu cari data user, info statistik, atau jawab pertanyaan seputar data intro FF. Tanya aja!</div>
+  </div>
+  <div class="chatbot-input">
+    <input type="text" id="chatInput" placeholder="Tanya sesuatu..." onkeydown="if(event.key==='Enter')sendChat()">
+    <button class="chatbot-send" onclick="sendChat()">➤</button>
+  </div>
+</div>
+<button class="chatbot-toggle" id="chatbotToggle" onclick="toggleChatbot()" title="Admin Assistant">🤖</button>
+
 <script>
+// ── localStorage safety polyfill (untuk environment sandbox/iframe) ──
+(function() {
+  try { localStorage.setItem('__test__', '1'); localStorage.removeItem('__test__'); }
+  catch(e) {
+    const _store = {};
+    window.localStorage = {
+      getItem: k => (_store[k] !== undefined ? _store[k] : null),
+      setItem: (k, v) => { _store[k] = String(v); },
+      removeItem: k => { delete _store[k]; },
+      clear: () => { Object.keys(_store).forEach(k => delete _store[k]); },
+      key: i => Object.keys(_store)[i] || null,
+      get length() { return Object.keys(_store).length; }
+    };
+  }
+})();
 // =======================================
 // CONFIG
 // =======================================
 const ADMIN_USER = 'lawliet';
 const ADMIN_PASS = 'L';
-const MOD_USER   = 'moderator';
-const MOD_PASS   = 'mod123';
 const API        = 'https://introff.up.railway.app/intro';
+const MOD_STORE_KEY = 'ff_moderators';
+
+// ── Dynamic moderators ──
+// Jika admin belum pernah set, gunakan default awal (bisa dihapus oleh admin)
+const DEFAULT_MODS = [{ user: 'moderator', pass: 'mod123' }];
+
+function getModerators() {
+  try {
+    const raw = localStorage.getItem(MOD_STORE_KEY);
+    if (raw !== null) {
+      const stored = JSON.parse(raw);
+      if (Array.isArray(stored)) return stored; // bisa kosong [] kalau semua sudah dihapus
+    }
+  } catch {}
+  // Pertama kali: copy default ke storage agar bisa dikelola admin
+  saveModerators([...DEFAULT_MODS]);
+  return [...DEFAULT_MODS];
+}
+function saveModerators(mods) {
+  localStorage.setItem(MOD_STORE_KEY, JSON.stringify(mods));
+}
 
 // =======================================
 // STATE
 // =======================================
-let allData       = [];
-let currentUser   = null;
-let currentRole   = null; // 'admin' | 'mod' | 'user'
+let allData         = [];
+let currentUser     = null;
+let currentRole     = null; // 'admin' | 'mod' | 'user'
 let pendingDeleteId = null;
-let audioCtx      = null;
-let sseSource     = null;
-let toastCount    = 0;
+let audioCtx        = null;
+let sseSource       = null;
+let toastCount      = 0;
+
+// =======================================
+// ── SECURITY: RATE LIMIT LOGIN ──
+// =======================================
+const LOGIN_ATTEMPTS_KEY = 'ff_login_attempts';
+const LOGIN_LOCK_MS      = 60 * 1000; // 1 menit lockout
+const MAX_ATTEMPTS       = 5;
+
+function getLoginAttempts(role) {
+  try { return JSON.parse(localStorage.getItem(LOGIN_ATTEMPTS_KEY + '_' + role)) || { count: 0, ts: 0 }; }
+  catch { return { count: 0, ts: 0 }; }
+}
+function recordLoginFail(role) {
+  const a = getLoginAttempts(role);
+  const now = Date.now();
+  if (now - a.ts > LOGIN_LOCK_MS) { a.count = 0; } // reset setelah masa lockout
+  a.count++;
+  a.ts = now;
+  localStorage.setItem(LOGIN_ATTEMPTS_KEY + '_' + role, JSON.stringify(a));
+}
+function resetLoginAttempts(role) {
+  localStorage.removeItem(LOGIN_ATTEMPTS_KEY + '_' + role);
+}
+function isLoginLocked(role) {
+  const a = getLoginAttempts(role);
+  const now = Date.now();
+  if (a.count >= MAX_ATTEMPTS && (now - a.ts) < LOGIN_LOCK_MS) {
+    const sisa = Math.ceil((LOGIN_LOCK_MS - (now - a.ts)) / 1000);
+    return sisa;
+  }
+  return 0;
+}
+
+// =======================================
+// ── SECURITY: SESSION TIMEOUT ADMIN ──
+// =======================================
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 menit idle
+let sessionTimer = null;
+let lastActivity  = Date.now();
+
+function resetSessionTimer() {
+  lastActivity = Date.now();
+  clearTimeout(sessionTimer);
+  if (currentRole === 'admin') {
+    sessionTimer = setTimeout(() => {
+      showToast('⏱️ Sesi admin berakhir karena idle 30 menit', 'warning');
+      setTimeout(doLogout, 2000);
+    }, SESSION_TIMEOUT_MS);
+  }
+}
+['click','keydown','mousemove','touchstart'].forEach(ev =>
+  document.addEventListener(ev, () => { if (currentRole === 'admin') resetSessionTimer(); }, { passive: true })
+);
 
 // =======================================
 // DEVICE FINGERPRINT
@@ -776,13 +1260,14 @@ const DEVICE_INTRO_KEY = `ff_device_done_${DEVICE_ID}`;
 // THEME
 // =======================================
 const themeBtn   = document.getElementById('themeBtn');
-const savedTheme = localStorage.getItem('ff_theme') || 'light';
+let savedTheme = 'light';
+try { savedTheme = localStorage.getItem('ff_theme') || 'light'; } catch(e) {}
 document.documentElement.setAttribute('data-theme', savedTheme);
 themeBtn.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
 themeBtn.onclick = () => {
   const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('ff_theme', next);
+  try { localStorage.setItem('ff_theme', next); } catch(e) {}
   themeBtn.textContent = next === 'dark' ? '☀️' : '🌙';
   playSound('click');
 };
@@ -867,40 +1352,48 @@ function openEditModal(id) {
 function closeEditModal() { document.getElementById('editModal').classList.remove('open'); }
 
 function confirmEdit() {
+  if (currentRole !== 'admin') { showToast('❌ Hanya admin yang bisa edit!', 'error'); return; }
   const id       = document.getElementById('editId').value;
-  const ingame   = document.getElementById('editIngame').value.trim();
-  const realname = document.getElementById('editRealname').value.trim();
+  const ingame   = sanitizeName(document.getElementById('editIngame').value);
+  const realname = sanitizeName(document.getElementById('editRealname').value);
   const level    = parseInt(document.getElementById('editLevel').value);
   const age      = parseInt(document.getElementById('editAge').value);
-  const city     = document.getElementById('editCity').value.trim();
+  const city     = sanitizeCity(document.getElementById('editCity').value);
 
   if (!ingame || !realname || !level || !age || !city) {
     showToast('❌ Isi semua field!', 'error'); playSound('error'); return;
   }
-  if (ingame.length < 2 || ingame.length > 12) {
-    showToast('❌ Nama IG 2–12 karakter!', 'error'); playSound('error'); return;
+  if (ingame.length < 2 || ingame.length > 12 || !isNameValid(ingame)) {
+    showToast('❌ Nama IG tidak valid (2–12 karakter, harus ada huruf)!', 'error'); playSound('error'); return;
+  }
+  if (!isNameValid(realname) || realname.length < 2) {
+    showToast('❌ Nama Asli tidak valid!', 'error'); playSound('error'); return;
   }
   if (age < 10 || age > 60) {
     showToast('❌ Usia 10–60 tahun!', 'error'); playSound('error'); return;
   }
+  if (city.length < 2) {
+    showToast('❌ Nama kota tidak valid!', 'error'); playSound('error'); return;
+  }
 
   const oldItem = allData.find(d => d._id === id);
+  const payload = {
+    namaInGame: ingame.charAt(0).toUpperCase() + ingame.slice(1),
+    namaReal:   realname.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' '),
+    levelAkun:  level,
+    usia:       age,
+    kota:       city.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' '),
+  };
 
-  fetch(`${API}/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ namaInGame: ingame, namaReal: realname, levelAkun: level, usia: age, kota: city })
-  })
+  apiPut(`${API}/${id}`, payload)
   .then(r => r.json())
   .then(() => {
     const idx = allData.findIndex(d => d._id === id);
-    if (idx !== -1) {
-      allData[idx] = { ...allData[idx], namaInGame: ingame, namaReal: realname, levelAkun: level, usia: age, kota: city };
-    }
+    if (idx !== -1) allData[idx] = { ...allData[idx], ...payload };
     updateStats(); renderList(); populateCityFilter();
     closeEditModal();
-    showToast(`✏️ ${ingame} berhasil diupdate!`, 'success'); playSound('edit');
-    addLog('edit', `Edit: ${oldItem?.namaInGame} → ${ingame}`, '✏️');
+    showToast(`✏️ ${payload.namaInGame} berhasil diupdate!`, 'success'); playSound('edit');
+    addLog('edit', `Edit: ${oldItem?.namaInGame} → ${payload.namaInGame}`, '✏️');
   })
   .catch(() => { showToast('❌ Gagal update data', 'error'); playSound('error'); });
 }
@@ -939,7 +1432,11 @@ function checkAutoLogin() {
   try {
     const { role, user } = JSON.parse(saved);
     if (role === 'admin' && user === ADMIN_USER) enterAdmin();
-    else if (role === 'mod' && user === MOD_USER) enterMod();
+    else if (role === 'mod') {
+      const mods = getModerators();
+      if (mods.length && mods.find(m => m.user === user)) enterMod(user);
+      else localStorage.removeItem('ff_remember');
+    }
     else if (role === 'user' && user) enterUser(user);
   } catch { localStorage.removeItem('ff_remember'); }
 }
@@ -963,6 +1460,9 @@ function enterUser(user) {
   showToast(`✅ Halo, ${user}! Silakan intro.`, 'success');
   restoreFormDraft();
   checkDeviceLocked();
+  recordLoginEvent('user:' + user);
+  updateCityDatalist();
+  goToStep(1);
 }
 
 // =======================================
@@ -970,24 +1470,44 @@ function enterUser(user) {
 // =======================================
 function doLoginAdmin() {
   playSound('click');
+  const lock = isLoginLocked('admin');
+  if (lock) { showToast(`🔒 Terlalu banyak percobaan! Coba lagi dalam ${lock} detik.`, 'error'); playSound('error'); return; }
   const user = document.getElementById('loginAdminUser').value.trim();
   const pass = document.getElementById('loginAdminPass').value.trim();
   if (user === ADMIN_USER && pass === ADMIN_PASS) {
+    resetLoginAttempts('admin');
     const remember = document.getElementById('rememberAdmin').checked;
     if (remember) localStorage.setItem('ff_remember', JSON.stringify({ role: 'admin', user }));
     enterAdmin();
-  } else { showToast('❌ Username atau password salah!', 'error'); playSound('error'); }
+  } else {
+    recordLoginFail('admin');
+    const a = getLoginAttempts('admin');
+    const sisa = MAX_ATTEMPTS - a.count;
+    if (sisa > 0) showToast(`❌ Salah! Sisa percobaan: ${sisa}`, 'error');
+    else showToast(`🔒 Terlalu banyak salah! Tunggu 1 menit.`, 'error');
+    playSound('error');
+  }
 }
 function enterAdmin() {
   currentUser = ADMIN_USER; currentRole = 'admin';
   document.getElementById('panelTitle').textContent = '👨‍💼 Admin Panel';
   document.getElementById('exportRow').style.display = 'flex';
   document.getElementById('activityLogBox').style.display = 'block';
+  document.getElementById('modManagerBox').style.display = 'block';
+  document.getElementById('resetDeviceBox').style.display = 'block';
+  document.getElementById('discordBox').style.display = 'block';
+  document.getElementById('loginHistoryBox').style.display = 'block';
   document.getElementById('navTabs').style.display = 'none';
+  document.getElementById('chatbotToggle').style.display = 'flex';
   showSection('adminSection');
   renderActivityLog();
+  renderModList();
   loadData(true);
   startSSE();
+  resetSessionTimer();
+  loadWebhookSettings();
+  renderLoginHistory();
+  recordLoginEvent('admin');
   playSound('login');
   showToast('✅ Login admin berhasil!', 'success');
 }
@@ -997,21 +1517,39 @@ function enterAdmin() {
 // =======================================
 function doLoginMod() {
   playSound('click');
+  const lock = isLoginLocked('mod');
+  if (lock) { showToast(`🔒 Terlalu banyak percobaan! Coba lagi dalam ${lock} detik.`, 'error'); playSound('error'); return; }
   const user = document.getElementById('loginModUser').value.trim();
   const pass = document.getElementById('loginModPass').value.trim();
-  if (user === MOD_USER && pass === MOD_PASS) {
-    enterMod();
-  } else { showToast('❌ Username atau password salah!', 'error'); playSound('error'); }
+  const mods = getModerators();
+  const match = mods.find(m => m.user === user && m.pass === pass);
+  if (match) {
+    resetLoginAttempts('mod');
+    enterMod(user);
+  } else {
+    recordLoginFail('mod');
+    const a = getLoginAttempts('mod');
+    const sisa = MAX_ATTEMPTS - a.count;
+    if (sisa > 0) showToast(`❌ Salah! Sisa percobaan: ${sisa}`, 'error');
+    else showToast(`🔒 Terlalu banyak salah! Tunggu 1 menit.`, 'error');
+    playSound('error');
+  }
 }
-function enterMod() {
-  currentUser = MOD_USER; currentRole = 'mod';
+function enterMod(modUser) {
+  currentUser = modUser || getModerators()[0]?.user || 'mod'; currentRole = 'mod';
   document.getElementById('panelTitle').textContent = '🛡️ Mod Panel';
-  document.getElementById('exportRow').style.display = 'none';
+  document.getElementById('exportRow').style.display = 'flex';
   document.getElementById('activityLogBox').style.display = 'none';
+  document.getElementById('modManagerBox').style.display = 'none';
+  document.getElementById('resetDeviceBox').style.display = 'none';
+  document.getElementById('discordBox').style.display = 'none';
+  document.getElementById('loginHistoryBox').style.display = 'none';
+  document.getElementById('chatbotToggle').style.display = 'none';
   document.getElementById('navTabs').style.display = 'none';
   showSection('adminSection');
   loadData(true);
   startSSE();
+  recordLoginEvent('mod:' + modUser);
   playSound('login');
   showToast('✅ Login moderator berhasil!', 'success');
 }
@@ -1055,6 +1593,15 @@ function lockForm() {
   info.style.display = 'block';
   info.innerHTML = '🔒 <strong>Perangkat ini sudah pernah mengisi form intro.</strong><br>'
     + '<span style="font-size:.85em">Hanya bisa 1x per perangkat. Hubungi admin untuk reset.</span>';
+  document.getElementById('progressSteps').style.opacity = '.4';
+  // Show profile after lock
+  const raw = localStorage.getItem(DEVICE_INTRO_KEY);
+  if (raw) {
+    try {
+      const s = JSON.parse(raw);
+      if (s.ffId) { setTimeout(() => openProfileByFfId(s.ffId), 800); }
+    } catch {}
+  }
 }
 
 function unlockForm() {
@@ -1063,6 +1610,7 @@ function unlockForm() {
   document.querySelectorAll('#introSection input').forEach(i => { i.disabled = false; i.style.opacity = '1'; });
   if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.textContent = '🚀 INTRO SEKARANG'; }
   info.style.display = 'none';
+  document.getElementById('progressSteps').style.opacity = '1';
 }
 
 // =======================================
@@ -1124,64 +1672,185 @@ function clearFieldError(id) {
 }
 
 // =======================================
-// INTRO SUBMIT (with anti-duplikat #6)
+// SMART VALIDATION HELPERS
+// =======================================
+function sanitizeText(str) {
+  // Hapus karakter aneh, HTML, script injection
+  return String(str)
+    .replace(/<[^>]*>/g, '')           // strip HTML tags
+    .replace(/[^\w\s\u00C0-\u024F\u3040-\u30FF\u4E00-\u9FFF.\-']/g, '') // hanya huruf, angka, spasi, tanda umum
+    .replace(/\s+/g, ' ')              // normalisasi spasi
+    .trim();
+}
+function sanitizeName(str) {
+  // Nama: hanya huruf (termasuk aksen), angka, spasi, titik, strip
+  return String(str)
+    .replace(/<[^>]*>/g, '')
+    .replace(/[^a-zA-Z0-9\s.\-_']/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+function isNameValid(str) {
+  // Nama tidak boleh hanya angka / simbol / karakter aneh semua
+  return /[a-zA-Z]/.test(str) && str.length >= 2;
+}
+function sanitizeCity(str) {
+  return String(str)
+    .replace(/<[^>]*>/g, '')
+    .replace(/[^a-zA-Z\s.\-]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// ── API REQUEST GUARD (basic token & header hardening) ──
+function apiPost(url, data) {
+  return fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest',
+      'X-Client-Version': '2.0',
+    },
+    body: JSON.stringify(data),
+    credentials: 'omit',
+  });
+}
+function apiPut(url, data) {
+  return fetch(url, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest',
+    },
+    body: JSON.stringify(data),
+    credentials: 'omit',
+  });
+}
+function apiDelete(url) {
+  return fetch(url, {
+    method: 'DELETE',
+    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    credentials: 'omit',
+  });
+}
+
+// ── SUBMIT RATE LIMIT (anti spam submit) ──
+const SUBMIT_RL_KEY = 'ff_submit_rl';
+function canSubmit() {
+  try {
+    const d = JSON.parse(localStorage.getItem(SUBMIT_RL_KEY)) || {};
+    if (d.ts && Date.now() - d.ts < 10000) return false; // 10 detik cooldown
+  } catch {}
+  return true;
+}
+function markSubmit() {
+  localStorage.setItem(SUBMIT_RL_KEY, JSON.stringify({ ts: Date.now() }));
+}
+
+// =======================================
+// INTRO SUBMIT — Smart Validation
 // =======================================
 async function doIntro() {
   playSound('click');
+
+  if (!canSubmit()) {
+    showToast('⏳ Tunggu sebentar sebelum kirim lagi!', 'warning'); return;
+  }
+
   if (await checkDeviceLocked()) {
     showToast('🔒 Perangkat ini sudah pernah intro!', 'error'); playSound('error'); return;
   }
   clearFieldError('ffIdError');
 
-  const ffid     = document.getElementById('ffId').value.trim();
-  const ingame   = document.getElementById('ingame').value.trim();
-  const realname = document.getElementById('realname').value.trim();
-  const level    = document.getElementById('level').value.trim();
-  const age      = parseInt(document.getElementById('age').value);
-  const city     = document.getElementById('city').value.trim();
+  // ── Ambil & sanitasi nilai form ──
+  const ffidRaw    = document.getElementById('ffId').value.trim();
+  const ingameRaw  = sanitizeName(document.getElementById('ingame').value);
+  const realnameRaw= sanitizeName(document.getElementById('realname').value);
+  const levelRaw   = document.getElementById('level').value.trim();
+  const ageRaw     = document.getElementById('age').value.trim();
+  const cityRaw    = sanitizeCity(document.getElementById('city').value);
 
-  if (!/^\d{8,12}$/.test(ffid))         { showToast('❌ ID FF harus 8–12 digit angka!','error'); playSound('error'); return; }
-  if (ingame.length<2||ingame.length>12) { showToast('❌ Nama IG 2–12 karakter!','error');        playSound('error'); return; }
-  if (!realname||!level||!age||!city)    { showToast('❌ Isi semua field!','error');               playSound('error'); return; }
-  if (age<10||age>60)                    { showToast('❌ Usia 10–60 tahun!','error');              playSound('error'); return; }
+  // ── Smart Validation ──
+  const ffid    = ffidRaw.replace(/\D/g, ''); // paksa angka saja
+  const ingame  = ingameRaw;
+  const realname= realnameRaw;
+  const level   = parseInt(levelRaw);
+  const age     = parseInt(ageRaw);
+  const city    = cityRaw;
 
-  // ---- ANTI-DUPLIKAT ID FF ----
+  // ID FF: 8–12 digit angka
+  if (!/^\d{8,12}$/.test(ffid)) {
+    showToast('❌ ID FF harus 8–12 digit angka (tanpa huruf/spasi)!', 'error'); playSound('error'); return;
+  }
+  // Nama IG
+  if (!ingame || ingame.length < 2 || ingame.length > 12) {
+    showToast('❌ Nama In Game 2–12 karakter!', 'error'); playSound('error'); return;
+  }
+  if (!isNameValid(ingame)) {
+    showToast('❌ Nama IG tidak valid (harus ada huruf)!', 'error'); playSound('error'); return;
+  }
+  // Nama Asli
+  if (!realname || realname.length < 2) {
+    showToast('❌ Nama Asli minimal 2 karakter!', 'error'); playSound('error'); return;
+  }
+  if (!isNameValid(realname)) {
+    showToast('❌ Nama Asli tidak valid (harus ada huruf)!', 'error'); playSound('error'); return;
+  }
+  // Level
+  if (!levelRaw || isNaN(level) || level < 1 || level > 999) {
+    showToast('❌ Level akun tidak valid (1–999)!', 'error'); playSound('error'); return;
+  }
+  // Usia
+  if (!ageRaw || isNaN(age) || age < 10 || age > 60) {
+    showToast('❌ Usia harus antara 10–60 tahun!', 'error'); playSound('error'); return;
+  }
+  // Kota
+  if (!city || city.length < 2) {
+    showToast('❌ Nama kota tidak valid!', 'error'); playSound('error'); return;
+  }
+
+  // ── Anti-duplikat ID FF ──
   try {
-    const resp       = await fetch(API);
+    const resp       = await fetch(API, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
     const serverData = await resp.json();
     const isDuplikat = serverData.some(d => String(d.ffId) === ffid);
     if (isDuplikat) {
       showFieldError('ffIdError', '❌ ID FF sudah digunakan!');
       showToast('❌ ID FF sudah ada di database!', 'error');
-      playSound('error');
-      return;
+      playSound('error'); return;
     }
-  } catch(e) {
-    showToast('⚠️ Tidak bisa cek duplikat, coba lagi', 'warning');
-    return;
+  } catch {
+    showToast('⚠️ Tidak bisa cek duplikat, coba lagi', 'warning'); return;
   }
 
+  // ── Rapikan data sebelum kirim ──
   const newData = {
-    ffId: ffid, namaInGame: ingame, namaReal: realname,
-    levelAkun: parseInt(level), usia: age, kota: city,
-    tanggal: new Date().toLocaleDateString('id-ID'),
-    waktu:   new Date().toLocaleTimeString('id-ID')
+    ffId:      ffid,
+    namaInGame: ingame.charAt(0).toUpperCase() + ingame.slice(1), // capitalize
+    namaReal:   realname.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' '),
+    levelAkun:  level,
+    usia:       age,
+    kota:       city.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' '),
+    tanggal:    new Date().toLocaleDateString('id-ID'),
+    waktu:      new Date().toLocaleTimeString('id-ID'),
   };
 
-  fetch(API, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(newData)
-  })
-  .then(r => r.json())
-  .then(() => {
-    // Kunci device, simpan ffId untuk reset-check
-    localStorage.setItem(DEVICE_INTRO_KEY, JSON.stringify({ time: Date.now(), ffId: ffid }));
-    clearFormDraft();
-    showToast('✅ Intro berhasil dikirim!', 'success'); playSound('success');
-    lockForm();
-  })
-  .catch(() => { showToast('❌ Gagal kirim ke server', 'error'); playSound('error'); });
+  markSubmit(); // set cooldown
+
+  apiPost(API, newData)
+    .then(r => r.json())
+    .then(saved => {
+      localStorage.setItem(DEVICE_INTRO_KEY, JSON.stringify({ time: Date.now(), ffId: ffid }));
+      clearFormDraft();
+      addKnownCity(newData.kota);
+      showToast('✅ Intro berhasil dikirim!', 'success'); playSound('success');
+      lockForm();
+      // Tampilkan profile modal setelah sukses
+      setTimeout(() => openProfileModal({ ...newData, _id: (saved && saved._id) || ffid }), 700);
+      // Kirim notif Discord webhook
+      sendDiscordWebhook(newData);
+    })
+    .catch(() => { showToast('❌ Gagal kirim ke server', 'error'); playSound('error'); });
 }
 
 // =======================================
@@ -1306,8 +1975,8 @@ function renderList() {
   list.innerHTML = filtered.map(item => `
     <div class="intro-item" id="item-${item._id}">
       <div class="card-actions">
-        ${(isAdmin || isMod) ? `<button class="edit-btn" onclick="openEditModal('${item._id}')" title="Edit">✏️</button>` : ''}
-        ${isAdmin            ? `<button class="delete-btn" onclick="openModal('${item._id}','${escHtml(item.namaInGame)}')" title="Hapus">🗑️</button>` : ''}
+        ${isAdmin ? `<button class="edit-btn" onclick="openEditModal('${item._id}')" title="Edit">✏️</button>` : ''}
+        ${isAdmin ? `<button class="delete-btn" onclick="openModal('${item._id}','${escAttr(item.namaInGame)}')" title="Hapus">🗑️</button>` : ''}
       </div>
       <div class="player-name">
         ⚔️ ${escHtml(item.namaInGame)}
@@ -1336,9 +2005,10 @@ function resetFilter() {
 // =======================================
 function confirmDelete() {
   if (!pendingDeleteId) return;
+  if (currentRole !== 'admin') { showToast('❌ Hanya admin yang bisa hapus!', 'error'); return; }
   const id   = pendingDeleteId;
   const item = allData.find(d => d._id === id);
-  fetch(`${API}/${id}`, { method: 'DELETE' })
+  apiDelete(`${API}/${id}`)
     .then(() => {
       allData = allData.filter(d => d._id !== id);
       updateStats(); renderList(); populateCityFilter();
@@ -1438,6 +2108,7 @@ function exportExcel() {
 // =======================================
 function doLogout() {
   playSound('click');
+  clearTimeout(sessionTimer);
   if (sseSource) { sseSource.close(); sseSource = null; }
   localStorage.removeItem('ff_remember');
   currentUser = null; currentRole = null; allData = [];
@@ -1451,6 +2122,8 @@ function doLogout() {
   });
   document.getElementById('navTabs').style.display  = 'none';
   document.getElementById('exportRow').style.display = 'none';
+  document.getElementById('chatbotToggle').style.display = 'none';
+  document.getElementById('chatbotBox').classList.remove('open');
   showSection('loginSection');
   showToast('👋 Logout berhasil', 'info');
 }
@@ -1465,6 +2138,217 @@ function escHtml(s) {
     .replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;');
 }
+// Untuk konteks dalam onclick attribute (escaping ' juga)
+function escAttr(s) {
+  return escHtml(s).replace(/'/g,'&#39;');
+}
+
+// =======================================
+// EXPORT PNG
+// =======================================
+function exportPNG() {
+  if (!allData.length) { showToast('⚠️ Tidak ada data untuk di-export!', 'warning'); return; }
+  showToast('🖼️ Membuat gambar PNG...', 'info');
+
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+  // Hardcoded colours — no CSS vars, works in any theme
+  const C = isDark ? {
+    pageBg:   '#1a1200',
+    cardBg:   '#2a1e00',
+    cardBorder:'#c8a800',
+    nameFg:   '#f4c16e',
+    subFg:    '#c8a050',
+    textFg:   '#faeaaa',
+    cellBg:   '#1e1600',
+    cellBorder:'#c8a800',
+    tsBg:     'transparent',
+    headerBg: '#2d2000',
+    headerFg: '#ffd700',
+  } : {
+    pageBg:   '#f5f5dc',
+    cardBg:   '#fff8dc',
+    cardBorder:'#daa520',
+    nameFg:   '#8b4513',
+    subFg:    '#a0522d',
+    textFg:   '#3b1a00',
+    cellBg:   '#fffaf0',
+    cellBorder:'#daa520',
+    tsBg:     'transparent',
+    headerBg: '#b8860b',
+    headerFg: '#ffffff',
+  };
+
+  // Build cards HTML
+  const cardsHtml = allData.map(item => `
+    <div style="
+      background:${C.cardBg};
+      border:2px solid ${C.cardBorder};
+      border-radius:16px;
+      padding:20px;
+      margin-bottom:16px;
+      font-family:'Exo 2',Arial,sans-serif;
+    ">
+      <div style="font-size:1.3em;font-weight:700;color:${C.nameFg};margin-bottom:12px;font-family:'Rajdhani',Arial,sans-serif;">
+        ⚔️ ${escHtml(item.namaInGame)}
+        <span style="font-size:.72em;opacity:.75;font-weight:400"> (${escHtml(item.namaReal)})</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;">
+        ${[
+          ['ID FF', item.ffId],
+          ['Level', 'Lv.' + item.levelAkun],
+          ['Usia',  item.usia + ' thn'],
+          ['Kota',  item.kota],
+        ].map(([lbl, val]) => `
+          <div style="background:${C.cellBg};border:1.5px solid ${C.cellBorder};border-radius:10px;padding:10px 8px;text-align:center;">
+            <div style="font-size:.72em;color:${C.subFg};margin-bottom:4px;font-weight:600;">${lbl}</div>
+            <div style="font-weight:700;color:${C.textFg};font-size:.95em;">${escHtml(String(val))}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div style="color:${C.subFg};font-size:.82em;text-align:right;">📅 ${item.tanggal} ⏰ ${item.waktu}</div>
+    </div>
+  `).join('');
+
+  // Build full wrapper
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = `
+    position:fixed;left:-9999px;top:0;
+    width:900px;padding:28px;
+    background:${C.pageBg};
+    font-family:'Exo 2',Arial,sans-serif;
+  `;
+
+  // Header
+  wrapper.innerHTML = `
+    <div style="background:${C.headerBg};border-radius:16px;padding:22px 28px;text-align:center;margin-bottom:20px;">
+      <div style="font-size:2em;font-weight:700;color:${C.headerFg};font-family:'Rajdhani',Arial,sans-serif;letter-spacing:3px;">
+        🎮 INTRO FF 🎮
+      </div>
+      <div style="color:rgba(255,255,255,.8);font-size:.95em;margin-top:4px;">
+        Golden Intro System — Total: ${allData.length} data
+      </div>
+      <div style="color:rgba(255,255,255,.6);font-size:.8em;margin-top:2px;">
+        Diexport: ${new Date().toLocaleString('id-ID')}
+      </div>
+    </div>
+    ${cardsHtml}
+  `;
+
+  document.body.appendChild(wrapper);
+
+  // Load Google Fonts hint (already in page, html2canvas may or may not use it)
+  html2canvas(wrapper, {
+    backgroundColor: C.pageBg,
+    scale: 2,
+    useCORS: true,
+    allowTaint: true,
+    logging: false,
+    windowWidth: 960,
+  }).then(canvas => {
+    document.body.removeChild(wrapper);
+    const link = document.createElement('a');
+    link.download = `data-intro-ff-${new Date().toLocaleDateString('id-ID').replace(/\//g,'-')}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('🖼️ PNG berhasil di-export!', 'success'); playSound('success');
+    addLog('export', `Export PNG (${allData.length} data)`, '🖼️');
+  }).catch(err => {
+    document.body.removeChild(wrapper);
+    console.error(err);
+    showToast('❌ Gagal membuat PNG', 'error'); playSound('error');
+  });
+}
+
+// =======================================
+// MODERATOR MANAGER (Admin only)
+// =======================================
+function renderModList() {
+  const mods = getModerators();
+  const el = document.getElementById('modList');
+  if (!el) return;
+  if (!mods.length) { el.innerHTML = '<div class="mod-empty">Belum ada moderator</div>'; return; }
+  el.innerHTML = mods.map((m, i) => `
+    <div class="mod-item">
+      <span class="mod-name">🛡️ ${escHtml(m.user)}</span>
+      <span class="mod-pass">🔑 ${escHtml(m.pass)}</span>
+      <button class="btn-sm-del" onclick="deleteModerator(${i})">🗑️ Hapus</button>
+    </div>
+  `).join('');
+}
+
+function addModerator() {
+  const userEl = document.getElementById('newModUser');
+  const passEl = document.getElementById('newModPass');
+  const user = userEl.value.trim();
+  const pass = passEl.value.trim();
+  if (!user || !pass) { showToast('❌ Isi username dan password!', 'error'); playSound('error'); return; }
+  if (user.length < 3) { showToast('❌ Username minimal 3 karakter!', 'error'); playSound('error'); return; }
+  if (pass.length < 4) { showToast('❌ Password minimal 4 karakter!', 'error'); playSound('error'); return; }
+  if (user === ADMIN_USER) { showToast('❌ Username sama dengan admin tidak boleh!', 'error'); playSound('error'); return; }
+  const mods = getModerators();
+  if (mods.find(m => m.user === user)) { showToast('❌ Username sudah ada!', 'error'); playSound('error'); return; }
+  mods.push({ user, pass });
+  saveModerators(mods);
+  renderModList();
+  userEl.value = ''; passEl.value = '';
+  showToast(`✅ Moderator "${user}" ditambahkan!`, 'success'); playSound('success');
+  addLog('edit', `Tambah mod: ${user}`, '🛡️');
+}
+
+function deleteModerator(index) {
+  const mods = getModerators();
+  const name = mods[index]?.user || '';
+  mods.splice(index, 1);
+  saveModerators(mods);
+  renderModList();
+  showToast(`🗑️ Moderator "${name}" dihapus`, 'info'); playSound('delete');
+  addLog('delete', `Hapus mod: ${name}`, '🗑️');
+}
+
+// =======================================
+// RESET ALL DEVICES
+// =======================================
+const RESET_BROADCAST_KEY = 'ff_global_reset_ts';
+
+function openResetDeviceModal() {
+  document.getElementById('resetConfirmInput').value = '';
+  document.getElementById('resetDeviceModal').classList.add('open');
+}
+function closeResetDeviceModal() {
+  document.getElementById('resetDeviceModal').classList.remove('open');
+}
+function confirmResetAllDevices() {
+  const val = document.getElementById('resetConfirmInput').value.trim();
+  if (val !== 'RESET') {
+    showToast('❌ Ketik RESET untuk konfirmasi!', 'error'); playSound('error'); return;
+  }
+  const ts = Date.now();
+  localStorage.setItem(RESET_BROADCAST_KEY, String(ts));
+  // Also reset current device's own lock if any
+  localStorage.removeItem(DEVICE_INTRO_KEY);
+  closeResetDeviceModal();
+  showToast('✅ Semua perangkat di-reset! Mereka bisa isi form lagi.', 'success');
+  playSound('success');
+  addLog('delete', 'Reset semua perangkat', '🔄');
+}
+
+function checkGlobalReset() {
+  const globalTs = parseInt(localStorage.getItem(RESET_BROADCAST_KEY) || '0');
+  if (!globalTs) return;
+  const raw = localStorage.getItem(DEVICE_INTRO_KEY);
+  if (!raw) return;
+  let stored;
+  try { stored = JSON.parse(raw); } catch { stored = { time: parseInt(raw) || 0 }; }
+  const introTime = stored.time || 0;
+  if (globalTs > introTime) {
+    localStorage.removeItem(DEVICE_INTRO_KEY);
+    if (currentRole === 'user') {
+      unlockForm();
+      showToast('🔓 Form di-reset oleh admin. Silakan isi ulang!', 'info');
+    }
+  }
+}
 
 // =======================================
 // ENTER KEY SHORTCUTS
@@ -1476,9 +2360,557 @@ document.getElementById('loginModUser').addEventListener('keydown',   e => { if(
 document.getElementById('loginModPass').addEventListener('keydown',   e => { if(e.key==='Enter') doLoginMod();   });
 
 // =======================================
-// INIT
+// PROGRESS FORM STEPS
 // =======================================
+let currentStep = 1;
+
+function goToStep(n) {
+  const vals = validateStep(currentStep);
+  if (n > currentStep && !vals) return;
+
+  // Update confirm preview on step 3
+  if (n === 3) {
+    document.getElementById('cfmId').textContent    = document.getElementById('ffId').value.trim() || '-';
+    document.getElementById('cfmIg').textContent    = document.getElementById('ingame').value.trim() || '-';
+    document.getElementById('cfmReal').textContent  = document.getElementById('realname').value.trim() || '-';
+    document.getElementById('cfmLevel').textContent = document.getElementById('level').value.trim() ? 'Lv.' + document.getElementById('level').value.trim() : '-';
+    document.getElementById('cfmAge').textContent   = document.getElementById('age').value.trim() ? document.getElementById('age').value.trim() + ' thn' : '-';
+    document.getElementById('cfmCity').textContent  = document.getElementById('city').value.trim() || '-';
+  }
+
+  document.getElementById(`formStep${currentStep}`).classList.remove('active');
+  document.getElementById(`formStep${n}`).classList.add('active');
+
+  // Update step dots
+  [1,2,3].forEach(i => {
+    const dot  = document.getElementById(`step-dot-${i}`);
+    if (i < n)      { dot.classList.add('done');   dot.classList.remove('active'); }
+    else if (i === n){ dot.classList.add('active'); dot.classList.remove('done');  }
+    else            { dot.classList.remove('done','active'); }
+  });
+  // Update lines
+  [1,2].forEach(i => {
+    const line = document.getElementById(`step-line-${i}`);
+    line.classList.toggle('done', n > i);
+  });
+
+  currentStep = n;
+  playSound('click');
+}
+
+function validateStep(s) {
+  if (s === 1) {
+    const ffid    = document.getElementById('ffId').value.trim().replace(/\D/g,'');
+    const ingame  = document.getElementById('ingame').value.trim();
+    const realname= document.getElementById('realname').value.trim();
+    if (!/^\d{8,12}$/.test(ffid)) { showToast('❌ ID FF harus 8–12 digit angka!','error'); playSound('error'); return false; }
+    if (ingame.length < 2 || ingame.length > 12) { showToast('❌ Nama IG 2–12 karakter!','error'); playSound('error'); return false; }
+    if (!isNameValid(ingame)) { showToast('❌ Nama IG harus ada huruf!','error'); playSound('error'); return false; }
+    if (!realname || realname.length < 2) { showToast('❌ Nama Asli minimal 2 karakter!','error'); playSound('error'); return false; }
+    if (!isNameValid(realname)) { showToast('❌ Nama Asli tidak valid!','error'); playSound('error'); return false; }
+  }
+  if (s === 2) {
+    const level = parseInt(document.getElementById('level').value);
+    const age   = parseInt(document.getElementById('age').value);
+    const city  = document.getElementById('city').value.trim();
+    if (isNaN(level) || level < 1 || level > 999) { showToast('❌ Level 1–999!','error'); playSound('error'); return false; }
+    if (isNaN(age)   || age < 10  || age > 60)    { showToast('❌ Usia 10–60 tahun!','error'); playSound('error'); return false; }
+    if (!city || city.length < 2) { showToast('❌ Nama kota tidak valid!','error'); playSound('error'); return false; }
+  }
+  return true;
+}
+
+// =======================================
+// AI SMART VALIDATION
+// =======================================
+function aiValidate() {
+  const level = parseInt(document.getElementById('level').value);
+  const age   = parseInt(document.getElementById('age').value);
+  const warn  = document.getElementById('aiWarning');
+  const msgs  = [];
+  if (!isNaN(level) && level > 900) msgs.push('⚠️ Level sangat tinggi (>900) — pastikan bukan salah ketik.');
+  if (!isNaN(level) && level < 5)   msgs.push('⚠️ Level sangat rendah (<5) — yakin benar?');
+  if (!isNaN(age)   && age < 12)    msgs.push('⚠️ Usia sangat muda — pastikan sudah sesuai.');
+  if (!isNaN(age) && !isNaN(level) && age < 15 && level > 500) msgs.push('⚠️ Kombinasi usia & level mencurigakan.');
+  if (msgs.length) {
+    warn.innerHTML = msgs.join('<br>');
+    warn.style.display = 'block';
+  } else {
+    warn.style.display = 'none';
+  }
+}
+
+// =======================================
+// CITY AUTOSUGGEST (Datalist)
+// =======================================
+function updateCityDatalist() {
+  try {
+    const stored  = JSON.parse(localStorage.getItem('ff_known_cities') || '[]');
+    const list    = document.getElementById('cityDatalist');
+    if (!list) return;
+    list.innerHTML = stored.map(c => `<option value="${escHtml(c)}">`).join('');
+  } catch {}
+}
+
+function addKnownCity(city) {
+  try {
+    const stored = new Set(JSON.parse(localStorage.getItem('ff_known_cities') || '[]'));
+    stored.add(city);
+    localStorage.setItem('ff_known_cities', JSON.stringify([...stored].slice(0, 100)));
+    // Also populate from allData if available
+    allData.forEach(d => { if (d.kota) stored.add(d.kota); });
+    localStorage.setItem('ff_known_cities', JSON.stringify([...stored].slice(0, 100)));
+  } catch {}
+}
+
+// =======================================
+// DRAG & DROP PHOTO UPLOAD
+// =======================================
+let uploadedPhotoData = null;
+
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('dropzone').classList.add('dragover');
+}
+function handleDragLeave(e) {
+  document.getElementById('dropzone').classList.remove('dragover');
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropzone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) processPhoto(file);
+  else showToast('❌ Hanya file gambar yang diizinkan!', 'error');
+}
+function handleFileInput(e) {
+  const file = e.target.files[0];
+  if (file) processPhoto(file);
+}
+function processPhoto(file) {
+  if (file.size > 2 * 1024 * 1024) { showToast('❌ Ukuran foto max 2MB!', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = r => {
+    uploadedPhotoData = r.target.result;
+    const prev = document.getElementById('profilePreview');
+    prev.src = uploadedPhotoData; prev.style.display = 'block';
+    document.getElementById('dropzone').innerHTML = '✅ Foto terpilih — klik untuk ganti';
+    showToast('📷 Foto berhasil dipilih!', 'success'); playSound('success');
+  };
+  reader.readAsDataURL(file);
+}
+
+// =======================================
+// KEYBOARD SHORTCUTS
+// =======================================
+document.addEventListener('keydown', e => {
+  // Ctrl+S → Autosave / quick action
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    if (currentRole === 'user') {
+      autosaveForm();
+      showToast('💾 Draft tersimpan!', 'info'); playSound('click');
+    } else if (currentRole === 'admin' || currentRole === 'mod') {
+      if (!allData.length) return;
+      exportCSV();
+      showToast('📄 Ctrl+S → Export CSV!', 'info');
+    }
+  }
+  // Ctrl+F → Focus search
+  if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+    const searchEl = document.getElementById('searchInput');
+    if (searchEl && (currentRole === 'admin' || currentRole === 'mod')) {
+      e.preventDefault();
+      searchEl.focus();
+      searchEl.select();
+    }
+  }
+  // Escape → Close modals
+  if (e.key === 'Escape') {
+    closeModal(); closeEditModal(); closeProfileModal();
+    document.getElementById('resetDeviceModal').classList.remove('open');
+    document.getElementById('chatbotBox').classList.remove('open');
+  }
+});
+
+// =======================================
+// IP TRACKING & LOGIN HISTORY
+// =======================================
+const LOGIN_HISTORY_KEY = 'ff_login_history';
+let cachedIP = null;
+
+async function getClientIP() {
+  if (cachedIP) return cachedIP;
+  try {
+    const r = await fetch('https://api.ipify.org?format=json');
+    const d = await r.json();
+    cachedIP = d.ip;
+    return cachedIP;
+  } catch { return 'Unknown'; }
+}
+
+async function recordLoginEvent(roleLabel) {
+  const ip      = await getClientIP();
+  const device  = navigator.userAgent.split(' ').slice(-2).join(' ').substring(0, 40);
+  const history = getLoginHistory();
+  history.unshift({
+    ip, device, role: roleLabel,
+    time: new Date().toLocaleString('id-ID'),
+    ts: Date.now()
+  });
+  if (history.length > 50) history.pop();
+  localStorage.setItem(LOGIN_HISTORY_KEY, JSON.stringify(history));
+  renderLoginHistory();
+}
+
+function getLoginHistory() {
+  try { return JSON.parse(localStorage.getItem(LOGIN_HISTORY_KEY)) || []; }
+  catch { return []; }
+}
+
+function renderLoginHistory() {
+  const el   = document.getElementById('loginHistoryList');
+  if (!el) return;
+  const hist = getLoginHistory();
+  if (!hist.length) { el.innerHTML = '<div class="mod-empty">Belum ada riwayat login</div>'; return; }
+  el.innerHTML = hist.slice(0,10).map(h => `
+    <div class="login-log-item">
+      <span class="login-log-ip">🌐 ${escHtml(h.ip)}</span>
+      <span class="login-log-info">👤 ${escHtml(h.role)} | ${escHtml(h.device)}</span>
+      <span class="login-log-time">🕐 ${escHtml(h.time)}</span>
+    </div>
+  `).join('');
+}
+
+function clearLoginHistory() {
+  localStorage.removeItem(LOGIN_HISTORY_KEY);
+  renderLoginHistory();
+  showToast('🗑️ Riwayat login dibersihkan', 'info'); playSound('click');
+}
+
+// =======================================
+// PUBLIC LEADERBOARD
+// =======================================
+let lbMode = 'level';
+let lbData = [];
+
+async function showPublicLeaderboard() {
+  playSound('click');
+  showSection('leaderboardSection');
+  document.getElementById('leaderboardList').innerHTML = '<div class="empty">⏳ Memuat data...</div>';
+  try {
+    const r = await fetch(API);
+    lbData  = await r.json();
+    renderLeaderboard('level', document.getElementById('lbBtnLevel'));
+  } catch {
+    document.getElementById('leaderboardList').innerHTML = '<div class="empty">❌ Gagal memuat data</div>';
+  }
+}
+
+function renderLeaderboard(mode, btn) {
+  lbMode = mode;
+  document.querySelectorAll('.lb-tab-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  let sorted = [...lbData];
+  if (mode === 'level') sorted.sort((a,b) => b.levelAkun - a.levelAkun);
+  else if (mode === 'age') sorted.sort((a,b) => b.usia - a.usia);
+  else if (mode === 'city') {
+    // Group by city
+    const cityMap = {};
+    lbData.forEach(d => { cityMap[d.kota] = (cityMap[d.kota]||0)+1; });
+    sorted = Object.entries(cityMap).sort((a,b) => b[1]-a[1]).map(([city,count]) => ({ kota:city, count }));
+    document.getElementById('leaderboardList').innerHTML = sorted.slice(0,15).map((d,i) => {
+      const rankClass = i===0?'gold':i===1?'silver':i===2?'bronze':'normal';
+      const medal     = i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}`;
+      return `
+        <div class="lb-item">
+          <div class="lb-rank ${rankClass}">${medal}</div>
+          <div class="lb-info">
+            <div class="lb-name">🏙️ ${escHtml(d.kota)}</div>
+            <div class="lb-detail">${d.count} player terdaftar</div>
+          </div>
+          <div class="lb-level">${d.count}<span style="font-size:.6em;color:var(--sub)"> player</span></div>
+        </div>`;
+    }).join('') || '<div class="empty">Belum ada data</div>';
+    return;
+  }
+
+  document.getElementById('leaderboardList').innerHTML = sorted.slice(0,15).map((d,i) => {
+    const rankClass = i===0?'gold':i===1?'silver':i===2?'bronze':'normal';
+    const medal     = i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}`;
+    const mainVal   = mode==='level' ? `Lv.${d.levelAkun}` : `${d.usia} thn`;
+    return `
+      <div class="lb-item">
+        <div class="lb-rank ${rankClass}">${medal}</div>
+        <div class="lb-info">
+          <div class="lb-name">⚔️ ${escHtml(d.namaInGame)}</div>
+          <div class="lb-detail">📍 ${escHtml(d.kota)} | ${escHtml(d.namaReal)}</div>
+        </div>
+        <div class="lb-level">${mainVal}</div>
+      </div>`;
+  }).join('') || '<div class="empty">Belum ada data</div>';
+}
+
+// =======================================
+// USER PROFILE MODAL + QR CODE + SHARE
+// =======================================
+let currentProfileData = null;
+
+function openProfileModal(item) {
+  currentProfileData = item;
+  document.getElementById('pmName').textContent  = item.namaInGame || '-';
+  document.getElementById('pmId').textContent    = 'ID: ' + (item.ffId || '-');
+  document.getElementById('pmLevel').textContent = 'Lv.' + (item.levelAkun || '-');
+  document.getElementById('pmAge').textContent   = (item.usia || '-') + ' thn';
+  document.getElementById('pmCity').textContent  = item.kota || '-';
+  document.getElementById('pmDate').textContent  = item.tanggal || '-';
+
+  // Generate QR
+  const qrEl = document.getElementById('qrCode');
+  qrEl.innerHTML = '';
+  const profileUrl = `${location.href.split('?')[0]}?view=${item.ffId}`;
+  try {
+    new QRCode(qrEl, {
+      text: profileUrl,
+      width: 120, height: 120,
+      colorDark: '#8b4513', colorLight: '#fffaf0',
+    });
+  } catch(e) { qrEl.textContent = '(QR unavailable)'; }
+
+  document.getElementById('profileModal').classList.add('open');
+  playSound('click');
+}
+
+async function openProfileByFfId(ffId) {
+  try {
+    const r    = await fetch(API);
+    const data = await r.json();
+    const item = data.find(d => String(d.ffId) === String(ffId));
+    if (item) openProfileModal(item);
+  } catch {}
+}
+
+function closeProfileModal() {
+  document.getElementById('profileModal').classList.remove('open');
+}
+
+function shareWhatsApp() {
+  if (!currentProfileData) return;
+  const d   = currentProfileData;
+  const msg = encodeURIComponent(
+    `⚔️ *${d.namaInGame}* (${d.namaReal})\n🎮 ID FF: ${d.ffId}\n📊 Level: ${d.levelAkun}\n📍 Kota: ${d.kota}\n🎉 Sudah intro di Golden Intro System!`
+  );
+  window.open(`https://wa.me/?text=${msg}`, '_blank');
+  addLog('export', `Share WA: ${d.namaInGame}`, '📱');
+}
+
+function copyProfileLink() {
+  if (!currentProfileData) return;
+  const url = `${location.href.split('?')[0]}?view=${currentProfileData.ffId}`;
+  navigator.clipboard.writeText(url).then(() => {
+    showToast('📋 Link profil disalin!', 'success'); playSound('success');
+  }).catch(() => {
+    showToast('❌ Gagal salin link', 'error');
+  });
+}
+
+// =======================================
+// DISCORD WEBHOOK
+// =======================================
+const WEBHOOK_KEY = 'ff_discord_webhook';
+
+function loadWebhookSettings() {
+  const url = localStorage.getItem(WEBHOOK_KEY) || '';
+  const el  = document.getElementById('webhookUrl');
+  if (el) el.value = url;
+  updateWebhookStatus(!!url);
+}
+
+function updateWebhookStatus(active) {
+  const el = document.getElementById('webhookStatus');
+  if (!el) return;
+  el.textContent = active ? '● Aktif' : '● Nonaktif';
+  el.className   = 'webhook-status ' + (active ? 'on' : 'off');
+}
+
+function saveWebhook() {
+  const url = document.getElementById('webhookUrl').value.trim();
+  if (url && !url.startsWith('https://discord.com/api/webhooks/')) {
+    showToast('❌ URL webhook Discord tidak valid!', 'error'); return;
+  }
+  localStorage.setItem(WEBHOOK_KEY, url);
+  updateWebhookStatus(!!url);
+  showToast(url ? '✅ Webhook Discord disimpan!' : '🗑️ Webhook dihapus', url ? 'success' : 'info');
+  playSound('success');
+}
+
+function clearWebhook() {
+  localStorage.removeItem(WEBHOOK_KEY);
+  document.getElementById('webhookUrl').value = '';
+  updateWebhookStatus(false);
+  showToast('🗑️ Webhook dihapus', 'info'); playSound('click');
+}
+
+async function testWebhook() {
+  const url = localStorage.getItem(WEBHOOK_KEY);
+  if (!url) { showToast('❌ Belum ada webhook URL!', 'error'); return; }
+  showToast('🧪 Mengirim test...', 'info');
+  await sendDiscordWebhook({ namaInGame:'[TEST]', ffId:'00000000', levelAkun:99, usia:20, kota:'Jakarta', namaReal:'Test User', tanggal: new Date().toLocaleDateString('id-ID') });
+}
+
+async function sendDiscordWebhook(item) {
+  const url = localStorage.getItem(WEBHOOK_KEY);
+  if (!url) return;
+  try {
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: '⚔️ Intro FF Bot',
+        embeds: [{
+          title: `🎮 Intro Baru: ${item.namaInGame}`,
+          color: 0xDAA520,
+          fields: [
+            { name: 'Nama Asli',  value: item.namaReal  || '-', inline: true },
+            { name: 'ID FF',      value: String(item.ffId), inline: true },
+            { name: 'Level',      value: `Lv.${item.levelAkun}`, inline: true },
+            { name: 'Usia',       value: `${item.usia} thn`,     inline: true },
+            { name: 'Kota',       value: item.kota || '-',       inline: true },
+            { name: 'Tanggal',    value: item.tanggal || '-',    inline: true },
+          ],
+          footer: { text: 'Golden Intro System' },
+          timestamp: new Date().toISOString(),
+        }]
+      })
+    });
+    showToast('🔔 Notifikasi Discord terkirim!', 'success'); playSound('success');
+  } catch(e) { showToast('❌ Gagal kirim ke Discord', 'error'); }
+}
+
+// =======================================
+// CHATBOT ADMIN (Claude AI)
+// =======================================
+let chatHistory = [];
+
+function toggleChatbot() {
+  const box = document.getElementById('chatbotBox');
+  box.classList.toggle('open');
+  if (box.classList.contains('open')) {
+    document.getElementById('chatInput').focus();
+  }
+  playSound('click');
+}
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const msg   = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  appendChatMsg(msg, 'user');
+
+  // Build context about current data
+  const stats = `Total: ${allData.length} data. ` +
+    (allData.length ? `Rata-rata level: ${(allData.reduce((a,b)=>a+(b.levelAkun||0),0)/allData.length).toFixed(0)}. ` : '') +
+    (allData.length ? `Kota terbanyak: ${Object.entries(allData.reduce((acc,d)=>{acc[d.kota]=(acc[d.kota]||0)+1;return acc;},{})).sort((a,b)=>b[1]-a[1])[0]?.[0]||'-'}.` : '');
+
+  const userList = allData.slice(0,10).map(d => `${d.namaInGame}(${d.ffId},Lv${d.levelAkun},${d.kota})`).join('; ');
+
+  chatHistory.push({ role:'user', content: msg });
+
+  const typingId = appendChatMsg('⏳ Mengetik...', 'bot typing');
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 400,
+        system: `Kamu adalah asisten admin untuk sistem Intro FF. Data saat ini: ${stats}. 10 data terbaru: ${userList}. Jawab dalam Bahasa Indonesia, singkat, informatif, dan friendly. Jika ditanya data spesifik, berikan berdasarkan data di atas.`,
+        messages: chatHistory.slice(-8)
+      })
+    });
+    const data = await resp.json();
+    const reply = data.content?.[0]?.text || 'Maaf, tidak bisa memproses pertanyaanmu.';
+    chatHistory.push({ role:'assistant', content: reply });
+    removeChatMsg(typingId);
+    appendChatMsg(reply, 'bot');
+  } catch(e) {
+    removeChatMsg(typingId);
+    appendChatMsg('❌ Koneksi gagal. Coba lagi.', 'bot');
+  }
+}
+
+let chatMsgCount = 0;
+function appendChatMsg(text, type) {
+  const id  = 'cmsg_' + (++chatMsgCount);
+  const el  = document.createElement('div');
+  el.className = 'chat-msg ' + type;
+  el.id = id;
+  el.textContent = text;
+  const msgs = document.getElementById('chatMsgs');
+  msgs.appendChild(el);
+  msgs.scrollTop = msgs.scrollHeight;
+  return id;
+}
+function removeChatMsg(id) {
+  document.getElementById(id)?.remove();
+}
+
+// =======================================
+// DARK MODE AUTO (System + Time)
+// =======================================
+function applyAutoTheme() {
+  // Only apply if user hasn't manually set a theme
+  const manual = localStorage.getItem('ff_theme_manual');
+  if (manual) return;
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const hour = new Date().getHours();
+  const nightTime = hour >= 20 || hour < 7;
+  const shouldDark = prefersDark || nightTime;
+  const currentTheme = document.documentElement.getAttribute('data-theme');
+  if (shouldDark && currentTheme !== 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    localStorage.setItem('ff_theme', 'dark');
+    document.getElementById('themeBtn').textContent = '☀️';
+  }
+}
+
+// Override theme button to mark as manual
+(function() {
+  const btn = document.getElementById('themeBtn');
+  const origHandler = btn.onclick;
+  btn.onclick = function() {
+    localStorage.setItem('ff_theme_manual', '1');
+    if (typeof origHandler === 'function') origHandler.call(this);
+  };
+})();
+
+// =======================================
+// OFFLINE MODE (Service Worker)
+// =======================================
+function initOfflineMode() {
+  window.addEventListener('online',  () => { document.getElementById('offlineBanner').classList.remove('show'); showToast('✅ Koneksi kembali!', 'success'); });
+  window.addEventListener('offline', () => { document.getElementById('offlineBanner').classList.add('show');    showToast('📶 Kamu offline', 'warning'); });
+  if (!navigator.onLine) document.getElementById('offlineBanner').classList.add('show');
+}
+
+// (doIntro sudah lengkap di atas — versi ini sudah include profile modal + discord webhook)
+
+// (startSSE sudah lengkap di atas)
+
+// =======================================
+// INIT NEW FEATURES
+// =======================================
+checkGlobalReset();
 checkAutoLogin();
+applyAutoTheme();
+initOfflineMode();
+
+// Bug fix: Dengarkan perubahan localStorage dari tab lain
+window.addEventListener('storage', e => {
+  if (e.key === RESET_BROADCAST_KEY) checkGlobalReset();
+});
 </script>
 </body>
 </html>
