@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Intro FF – Golden System</title>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Exo+2:wght@300;400;700;900&display=swap" rel="stylesheet">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -787,25 +786,19 @@ input:focus,select:focus{outline:none;border-color:var(--gold-dark);box-shadow:0
 <button class="chatbot-toggle" id="chatbotToggle" onclick="toggleChatbot()" title="Admin Assistant">🤖</button>
 
 <script>
-// ── localStorage polyfill (sandbox/iframe/tracking-prevention safe) ──
+// ── localStorage polyfill (sandbox/iframe safe) ──
 (function(){
-  const _mem={};
-  const _memStore={
-    getItem:k=>(_mem[k]!==undefined?_mem[k]:null),
-    setItem:(k,v)=>{_mem[k]=String(v);},
-    removeItem:k=>{delete _mem[k];},
-    clear:()=>{Object.keys(_mem).forEach(k=>delete _mem[k]);},
-    key:i=>Object.keys(_mem)[i]||null,
-    get length(){return Object.keys(_mem).length;}
-  };
-  try{
-    const t='__ls_test__';
-    localStorage.setItem(t,'1');
-    localStorage.removeItem(t);
-  }catch(e){
-    // Tracking Prevention or sandbox blocked real localStorage — use in-memory fallback
-    try{Object.defineProperty(window,'localStorage',{value:_memStore,writable:false,configurable:true});}
-    catch(e2){window.localStorage=_memStore;}
+  try{localStorage.setItem('__t','1');localStorage.removeItem('__t');}
+  catch(e){
+    const s={};
+    window.localStorage={
+      getItem:k=>(s[k]!==undefined?s[k]:null),
+      setItem:(k,v)=>{s[k]=String(v);},
+      removeItem:k=>{delete s[k];},
+      clear:()=>{Object.keys(s).forEach(k=>delete s[k]);},
+      key:i=>Object.keys(s)[i]||null,
+      get length(){return Object.keys(s).length;}
+    };
   }
 })();
 
@@ -898,9 +891,7 @@ function togglePass(id, btn){ const el=document.getElementById(id); if(el.type==
 function getAudioCtx(){ if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
 function playSound(type){
   try{
-    const ctx=getAudioCtx();
-    if(ctx.state==='suspended'){ctx.resume().catch(()=>{});}
-    const osc=ctx.createOscillator(),gain=ctx.createGain();
+    const ctx=getAudioCtx(),osc=ctx.createOscillator(),gain=ctx.createGain();
     osc.connect(gain);gain.connect(ctx.destination);
     const cfg={click:{freq:600,type:'sine',dur:.08,vol:.12},success:{freq:880,type:'triangle',dur:.28,vol:.18},error:{freq:220,type:'sawtooth',dur:.28,vol:.15},delete:{freq:350,type:'square',dur:.22,vol:.12},login:{freq:740,type:'triangle',dur:.35,vol:.18},edit:{freq:660,type:'sine',dur:.2,vol:.14}};
     const c=cfg[type]||cfg.click;
@@ -1659,7 +1650,7 @@ async function sendChat(){
   chatHistory.push({role:'user',content:msg});
   const typingId=appendChatMsg('⏳ Mengetik...','bot typing');
   try{
-    const resp=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,system:`Kamu adalah asisten admin Intro FF. Data: ${stats}. 10 terbaru: ${userList}. Jawab Bahasa Indonesia, singkat, informatif, friendly.`,messages:chatHistory.slice(-8)})});
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,system:`Kamu adalah asisten admin Intro FF. Data: ${stats}. 10 terbaru: ${userList}. Jawab Bahasa Indonesia, singkat, informatif, friendly.`,messages:chatHistory.slice(-8)})});
     const data=await resp.json();
     const reply=data.content?.[0]?.text||'Maaf, tidak bisa memproses pertanyaanmu.';
     chatHistory.push({role:'assistant',content:reply});removeChatMsg(typingId);appendChatMsg(reply,'bot');

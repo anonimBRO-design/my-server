@@ -10,7 +10,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 // 🔥 CONNECT DATABASE
-mongoose.connect(process.env.MONGO_URI || "mongodb+srv://axiooxjkt48pro_db_user:LwEII86ghHvHxhJ0@intro.ifepmi9.mongodb.net/introDB")
+mongoose.connect("mongodb+srv://axiooxjkt48pro_db_user:LwEII86ghHvHxhJ0@intro.ifepmi9.mongodb.net/introDB")
   .then(() => console.log("✅ MongoDB Connected"))
   .catch(err => console.log("❌ MongoDB Error:", err));
 
@@ -45,56 +45,6 @@ function broadcastSSE(eventName, data) {
 // ROUTES
 // ============================================================
 
-// 🤖 CHATBOT PROXY — Hugging Face (hindari CORS browser)
-app.post("/api/chat", async (req, res) => {
-  const HF_TOKEN = process.env.HF_TOKEN;
-  if (!HF_TOKEN) {
-    return res.status(500).json({ error: "HF_TOKEN belum dikonfigurasi di server." });
-  }
-
-  try {
-    const { system, messages, max_tokens } = req.body;
-
-    // Gabungkan system prompt ke messages (format HF)
-    const fullMessages = system
-      ? [{ role: "system", content: system }, ...messages]
-      : messages;
-
-    const response = await fetch(
-      "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${HF_TOKEN}`,
-        },
-        body: JSON.stringify({
-          model: "mistralai/Mistral-7B-Instruct-v0.3",
-          messages: fullMessages,
-          max_tokens: max_tokens || 400,
-          temperature: 0.7,
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const err = await response.text();
-      console.error("HF API error:", err);
-      return res.status(response.status).json({ error: "HF API gagal: " + err });
-    }
-
-    const data = await response.json();
-
-    // Konversi format HF → format Anthropic yang dipakai frontend
-    const replyText = data.choices?.[0]?.message?.content || "Maaf, tidak ada respons.";
-    res.json({ content: [{ type: "text", text: replyText }] });
-
-  } catch (err) {
-    console.error("Proxy error:", err);
-    res.status(500).json({ error: "Gagal menghubungi Hugging Face API." });
-  }
-});
-
 // 🔥 SSE — admin subscribe realtime
 app.get("/intro/stream", (req, res) => {
   res.setHeader("Content-Type", "text/event-stream");
@@ -102,6 +52,7 @@ app.get("/intro/stream", (req, res) => {
   res.setHeader("Connection", "keep-alive");
   res.flushHeaders();
 
+  // kirim ping tiap 25 detik biar koneksi ga putus
   const ping = setInterval(() => {
     try { res.write(": ping\n\n"); } catch { clearInterval(ping); }
   }, 25000);
@@ -124,7 +75,7 @@ app.get("/intro", async (req, res) => {
   }
 });
 
-// 🔥 GET count
+// 🔥 GET count — cek jumlah data (ringan, untuk polling fallback)
 app.get("/intro/count", async (req, res) => {
   try {
     const count = await Intro.countDocuments();
@@ -134,34 +85,22 @@ app.get("/intro/count", async (req, res) => {
   }
 });
 
-// 🔥 POST — simpan data baru
+// 🔥 POST — simpan data baru + broadcast ke semua admin
 app.post("/intro", async (req, res) => {
   try {
     const data = new Intro(req.body);
     await data.save();
+
+    // broadcast ke semua admin yang konek SSE
     broadcastSSE("new_intro", data);
+
     res.json({ status: "ok", data });
   } catch (err) {
     res.status(500).json({ error: "Gagal simpan data" });
   }
 });
 
-// 🔥 PUT — edit data by _id
-app.put("/intro/:id", async (req, res) => {
-  try {
-    const updated = await Intro.findByIdAndUpdate(
-      req.params.id,
-      { $set: req.body },
-      { new: true }
-    );
-    if (!updated) return res.status(404).json({ error: "Data tidak ditemukan" });
-    res.json({ status: "ok", data: updated });
-  } catch (err) {
-    res.status(500).json({ error: "Gagal update data" });
-  }
-});
-
-// 🔥 DELETE — hapus data by _id
+// 🔥 DELETE — hapus data by MongoDB _id
 app.delete("/intro/:id", async (req, res) => {
   try {
     await Intro.findByIdAndDelete(req.params.id);
