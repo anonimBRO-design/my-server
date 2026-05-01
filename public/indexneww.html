@@ -9,41 +9,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<!-- Firebase SDK -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getDatabase, ref, push, onValue, remove, update, off, serverTimestamp, query, limitToLast, orderByChild } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
-  // =============================================
-  // FIREBASE CONFIG — Ganti dengan config kamu!
-  // Daftar gratis di https://console.firebase.google.com
-  // =============================================
-  const firebaseConfig = {
-    apiKey: "AIzaSyDEMO_REPLACE_WITH_YOUR_KEY",
-    authDomain: "your-project.firebaseapp.com",
-    databaseURL: "https://your-project-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "your-project",
-    storageBucket: "your-project.appspot.com",
-    messagingSenderId: "000000000000",
-    appId: "1:000000000000:web:abc123"
-  };
-
-  let app, db;
-  let firebaseReady = false;
-  let activeListeners = {};
-
-  try {
-    app = initializeApp(firebaseConfig);
-    db = getDatabase(app);
-    firebaseReady = true;
-    console.log('✅ Firebase connected!');
-  } catch(e) {
-    console.warn('⚠️ Firebase tidak tersambung, fallback ke localStorage:', e.message);
-  }
-
-  // Expose ke window supaya bisa dipakai di script lain
-  window._firebase = { db, ref, push, onValue, remove, update, off, serverTimestamp, query, limitToLast, orderByChild, firebaseReady };
-</script>
 <style>
 :root {
   --gold:#daa520;--gold-dark:#b8860b;--gold-light:#f0c040;
@@ -745,12 +710,6 @@ input:focus,select:focus{outline:none;border-color:var(--gold-dark);box-shadow:0
 
     <!-- ====== COMMUNITY CHAT ====== -->
     <div id="communitySection" class="section">
-      <!-- Firebase Setup Banner (shown when not configured) -->
-      <div id="firebaseSetupBanner" style="background:linear-gradient(135deg,#e67e22,#c0392b);color:#fff;padding:10px 18px;font-size:.82em;font-weight:700;display:flex;align-items:center;gap:9px;flex-wrap:wrap">
-        <span>🔥</span>
-        <span style="flex:1">Chat realtime lintas device membutuhkan Firebase. <a href="https://console.firebase.google.com" target="_blank" style="color:#fff;text-decoration:underline">Setup gratis di sini</a> lalu masukkan config di kode. Saat ini berjalan di mode lokal (tab ini saja).</span>
-        <button onclick="this.parentElement.style.display='none'" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:4px 9px;cursor:pointer;font-weight:700">✕</button>
-      </div>
       <div class="community-header">
         <h3>💬 Community Chat</h3>
         <div class="community-online"><span class="rt-dot" style="background:#7fff00;animation:pulse 1.2s infinite;display:inline-block;width:7px;height:7px;border-radius:50%"></span><span id="onlineCount">1 online</span></div>
@@ -2162,8 +2121,7 @@ function checkAutoLogin(){
 }
 
 // =======================================
-// COMMUNITY CHAT — REALTIME (Firebase + localStorage fallback)
-// Chat lintas device seperti WhatsApp Group
+// COMMUNITY CHAT — POWERED BY CLAUDE API
 // =======================================
 const COMM_STORAGE_KEY = 'ff_community_msgs_v3';
 const COMM_MAX_MSGS = 200;
@@ -2174,21 +2132,16 @@ let lastMsgCount = 0;
 let typingTimeout = null;
 let commChatInitialized = false;
 let commImgData = null;
-let _fbListener = null; // Firebase listener handle
-let _commMsgsCache = []; // in-memory cache for Firebase msgs
 
+// Emoji reactions available
 const REACTIONS = ['👍','❤️','😂','😮','🔥','🎯'];
 
-// ---- Helper: Firebase ready? ----
-function _fb(){ return window._firebase && window._firebase.firebaseReady ? window._firebase : null; }
-
-// ---- LocalStorage fallback ----
-function getCommMsgsLocal(room){
+function getCommMsgs(room){
   try{return JSON.parse(localStorage.getItem(COMM_STORAGE_KEY+'_'+room))||[];}catch{return[];}
 }
-function saveCommMsgsLocal(room, msgs){
+function saveCommMsgs(room, msgs){
   if(msgs.length>COMM_MAX_MSGS) msgs=msgs.slice(-COMM_MAX_MSGS);
-  try{localStorage.setItem(COMM_STORAGE_KEY+'_'+room, JSON.stringify(msgs));}catch{}
+  try{localStorage.setItem(COMM_STORAGE_KEY+'_'+room, JSON.stringify(msgs));}catch(e){}
 }
 
 function getRoleTag(role){
@@ -2196,68 +2149,37 @@ function getRoleTag(role){
   if(role==='mod')return '<span class="role-tag tag-mod">MOD</span>';
   return '<span class="role-tag tag-user">USER</span>';
 }
-function getInitial(name){ return (name||'?').charAt(0).toUpperCase(); }
+
+function getInitial(name){
+  return (name||'?').charAt(0).toUpperCase();
+}
+
 function getAvatarColor(name){
   let h=0;for(let c of (name||''))h=(Math.imul(31,h)+c.charCodeAt(0))|0;
   const colors=['#e74c3c','#e67e22','#2ecc71','#3498db','#9b59b6','#1abc9c','#e91e63','#ff5722'];
   return colors[Math.abs(h)%colors.length];
 }
-function getMyUserId(){
-  let uid=localStorage.getItem('ff_chat_uid');
-  if(!uid){uid='u_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6);localStorage.setItem('ff_chat_uid',uid);}
-  return uid;
-}
-
-// ---- Firebase: attach realtime listener for a room ----
-function _attachFirebaseListener(room){
-  const fb = _fb();
-  if(!fb) return;
-  // Detach previous listener
-  if(_fbListener && window._fbListenerRef){
-    fb.off(window._fbListenerRef);
-    _fbListener = null;
-  }
-  const roomRef = fb.query(fb.ref(fb.db, 'ff_chat/'+room), fb.orderByChild('ts'), fb.limitToLast(200));
-  window._fbListenerRef = roomRef;
-  _fbListener = fb.onValue(roomRef, (snapshot)=>{
-    const data = snapshot.val();
-    if(!data){ _commMsgsCache=[]; renderCommMsgs(true); return; }
-    // Convert Firebase object to array
-    _commMsgsCache = Object.entries(data).map(([fbKey, msg])=>({...msg, fbKey}));
-    _commMsgsCache.sort((a,b)=>(a.ts||0)-(b.ts||0));
-    lastMsgCount = _commMsgsCache.length;
-    renderCommMsgs(true);
-    updateOnlineCount();
-    // Play sound for new messages from others
-    const last = _commMsgsCache[_commMsgsCache.length-1];
-    if(last && last.userId !== getMyUserId()) playSound('success');
-  });
-}
 
 function initCommunityChat(){
   if(commChatInitialized) return;
   commChatInitialized = true;
-  const fb = _fb();
-  if(fb){
-    // Firebase mode: realtime cross-device
-    document.getElementById('onlineCount').textContent = '🔴 Realtime';
-    _attachFirebaseListener(currentRoom);
-    // Typing via Firebase presence
-    _startOnlinePresence();
-  } else {
-    // Fallback: localStorage + poll
-    showToast('⚠️ Mode offline — chat hanya di tab ini','warning');
-    renderCommMsgs();
+  renderCommMsgs();
+  updateOnlineCount();
+  // Poll every 3s for new messages from other sessions (simulate realtime with storage events)
+  commPollInterval = setInterval(()=>{
+    const msgs=getCommMsgs(currentRoom);
+    if(msgs.length!==lastMsgCount){
+      lastMsgCount=msgs.length;
+      renderCommMsgs(false);
+    }
     updateOnlineCount();
-    commPollInterval = setInterval(()=>{
-      const msgs=getCommMsgsLocal(currentRoom);
-      if(msgs.length!==lastMsgCount){lastMsgCount=msgs.length;renderCommMsgs(false);}
-      updateOnlineCount();
-    }, 2500);
-    window.addEventListener('storage', e=>{
-      if(e.key && e.key.startsWith(COMM_STORAGE_KEY)) renderCommMsgs(false);
-    });
-  }
+  }, 2500);
+  // Listen for storage changes from other tabs
+  window.addEventListener('storage', e=>{
+    if(e.key && e.key.startsWith(COMM_STORAGE_KEY)){
+      renderCommMsgs(false);
+    }
+  });
 }
 
 function switchRoom(room, btn){
@@ -2266,22 +2188,22 @@ function switchRoom(room, btn){
   if(btn) btn.classList.add('active');
   replyTo = null;
   document.getElementById('replyIndicator').classList.remove('show');
-  _commMsgsCache = [];
-  const container = document.getElementById('communityMsgs');
-  if(container) container.innerHTML='<div class="comm-empty"><span class="comm-empty-icon">⏳</span>Memuat pesan...</div>';
-  const pins={umum:'Selamat datang! Jaga sopan santun ya 🙏',ngobrol:'Bebas ngobrol, asal tetap ramah 😄',carimabar:'Share server & jadwal main kamu! 🎮',tips:'Berbagi tips Free Fire untuk sesama member 💡'};
-  const pt=document.getElementById('pinnedMsgText');
-  const pb=document.getElementById('pinnedMsgBar');
-  if(pt) pt.textContent=pins[room]||'';
+  renderCommMsgs();
+  // Update pinned message per room
+  const pins = {
+    umum:'Selamat datang! Jaga sopan santun ya 🙏',
+    ngobrol:'Bebas ngobrol, asal tetap ramah 😄',
+    carimabar:'Share server & jadwal main kamu! 🎮',
+    tips:'Berbagi tips Free Fire untuk sesama member 💡'
+  };
+  const pb = document.getElementById('pinnedMsgBar');
+  const pt = document.getElementById('pinnedMsgText');
+  if(pt) pt.textContent = pins[room]||'';
   if(pb) pb.classList.add('show');
-  const fb=_fb();
-  if(fb) _attachFirebaseListener(room);
-  else renderCommMsgs();
 }
 
 function renderCommMsgs(scrollToBottom=true){
-  const fb = _fb();
-  const msgs = fb ? _commMsgsCache : getCommMsgsLocal(currentRoom);
+  const msgs = getCommMsgs(currentRoom);
   const container = document.getElementById('communityMsgs');
   if(!container) return;
   lastMsgCount = msgs.length;
@@ -2290,22 +2212,24 @@ function renderCommMsgs(scrollToBottom=true){
     return;
   }
   let html='', lastDay='';
-  msgs.forEach(msg=>{
+  msgs.forEach((msg,idx)=>{
     const isOwn = msg.userId === getMyUserId();
     const dayStr = msg.day||'';
-    if(dayStr && dayStr!==lastDay){html+=`<div class="comm-day-divider">${escHtml(dayStr)}</div>`;lastDay=dayStr;}
-    const initChar=getInitial(msg.user);
-    const avatarColor=getAvatarColor(msg.user);
-    const reactionHtml=REACTIONS.map(em=>{
-      const count=(msg.reactions&&msg.reactions[em])||0;
-      const myReacted=msg.reactions&&msg.reactions[em+'_me'];
-      return `<button class="comm-react${myReacted?' active':''}" onclick="toggleReaction('${escAttr(msg.id||msg.fbKey)}','${em}')">${em}${count>0?` ${count}`:''}</button>`;
+    if(dayStr && dayStr!==lastDay){
+      html+=`<div class="comm-day-divider">${escHtml(dayStr)}</div>`;
+      lastDay=dayStr;
+    }
+    const initChar = getInitial(msg.user);
+    const avatarColor = getAvatarColor(msg.user);
+    const reactionHtml = REACTIONS.map(em=>{
+      const count = (msg.reactions&&msg.reactions[em])||0;
+      const myReacted = msg.reactions&&msg.reactions[em+'_me'];
+      return `<button class="comm-react${myReacted?' active':''}" onclick="toggleReaction('${escAttr(msg.id)}','${em}')">${em}${count>0?` ${count}`:''}</button>`;
     }).join('');
-    const replyHtml=msg.replyTo?`<div class="comm-reply-ref" onclick="scrollToMsg('${escAttr(msg.replyTo.id)}')">↩️ ${escHtml(msg.replyTo.user)}: ${escHtml((msg.replyTo.text||'📷 Gambar').substring(0,50))}</div>`:'';
-    const imgHtml=msg.img?`<br><img class="comm-img" src="${msg.img}" alt="img" onclick="openLightbox(this.src)">` :'';
-    const canDelete=isOwn||currentRole==='admin';
-    const msgId=msg.id||msg.fbKey;
-    html+=`<div class="comm-msg${isOwn?' own':''}" id="commsg-${escAttr(msgId)}">
+    const replyHtml = msg.replyTo ? `<div class="comm-reply-ref" onclick="scrollToMsg('${escAttr(msg.replyTo.id)}')">↩️ ${escHtml(msg.replyTo.user)}: ${escHtml((msg.replyTo.text||'📷 Gambar').substring(0,50))}</div>` : '';
+    const imgHtml = msg.img ? `<br><img class="comm-img" src="${msg.img}" alt="img" onclick="openLightbox(this.src)">` : '';
+    const canDelete = isOwn || currentRole==='admin';
+    html+=`<div class="comm-msg${isOwn?' own':''}" id="commsg-${escAttr(msg.id)}">
       <div class="comm-avatar" style="background:${avatarColor}">${escHtml(initChar)}</div>
       <div class="comm-bubble">
         ${replyHtml}
@@ -2314,202 +2238,159 @@ function renderCommMsgs(scrollToBottom=true){
         <div class="comm-time">${escHtml(msg.time||'')}</div>
         <div class="comm-actions">
           ${reactionHtml}
-          <button class="comm-reply-btn" onclick="startReply('${escAttr(msgId)}','${escAttr(msg.user)}','${escAttr((msg.text||'📷').substring(0,40))}')">↩️ Balas</button>
-          ${canDelete?`<button class="comm-delete-btn" onclick="deleteCommMsg('${escAttr(msgId)}','${escAttr(msg.fbKey||'')}')">🗑️</button>`:''}
+          <button class="comm-reply-btn" onclick="startReply('${escAttr(msg.id)}','${escAttr(msg.user)}','${escAttr((msg.text||'📷').substring(0,40))}')">↩️ Balas</button>
+          ${canDelete?`<button class="comm-delete-btn" onclick="deleteCommMsg('${escAttr(msg.id)}')">🗑️</button>`:''}
         </div>
       </div>
     </div>`;
   });
-  container.innerHTML=html;
-  if(scrollToBottom) container.scrollTop=container.scrollHeight;
+  container.innerHTML = html;
+  if(scrollToBottom) container.scrollTop = container.scrollHeight;
+}
+
+function getMyUserId(){
+  let uid = localStorage.getItem('ff_chat_uid');
+  if(!uid){ uid='u_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6); localStorage.setItem('ff_chat_uid',uid); }
+  return uid;
 }
 
 async function sendCommMsg(){
-  const inp=document.getElementById('commInput');
-  const text=inp.value.trim();
-  if(!text&&!commImgData){showToast('❌ Pesan kosong!','error');return;}
-  if(text.length>500){showToast('❌ Pesan max 500 karakter!','error');return;}
-  if(!currentUser){showToast('❌ Login dulu!','error');return;}
-  const now=new Date();
-  const msg={
-    id:'msg_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),
-    userId:getMyUserId(),
-    user:currentUser,
-    role:currentRole||'user',
-    text:text,
-    img:commImgData||null,
-    time:now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}),
-    day:now.toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short'}),
-    replyTo:replyTo||null,
-    reactions:{},
-    ts:Date.now()
+  const inp = document.getElementById('commInput');
+  const text = inp.value.trim();
+  if(!text && !commImgData){ showToast('❌ Pesan kosong!','error'); return; }
+  if(text.length>500){ showToast('❌ Pesan max 500 karakter!','error'); return; }
+  if(!currentUser){ showToast('❌ Login dulu!','error'); return; }
+
+  const msgs = getCommMsgs(currentRoom);
+  const now = new Date();
+  const msg = {
+    id: 'msg_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),
+    userId: getMyUserId(),
+    user: currentUser,
+    role: currentRole||'user',
+    text: text,
+    img: commImgData||null,
+    time: now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}),
+    day: now.toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short'}),
+    replyTo: replyTo||null,
+    reactions: {},
+    ts: Date.now()
   };
-  inp.value='';inp.style.height='42px';commImgData=null;cancelReply();
-
-  const fb=_fb();
-  if(fb){
-    // Send to Firebase — all devices will receive it via onValue listener
-    try{
-      await fb.push(fb.ref(fb.db,'ff_chat/'+currentRoom), msg);
-      playSound('success');
-    }catch(e){
-      showToast('❌ Gagal kirim: '+e.message,'error');
-    }
-  } else {
-    // localStorage fallback
-    const msgs=getCommMsgsLocal(currentRoom);
-    msgs.push(msg);
-    saveCommMsgsLocal(currentRoom,msgs);
-    renderCommMsgs(true);
-    playSound('success');
-  }
+  msgs.push(msg);
+  saveCommMsgs(currentRoom, msgs);
+  inp.value='';
+  inp.style.height='42px';
+  commImgData=null;
+  cancelReply();
+  renderCommMsgs(true);
+  playSound('success');
 }
 
-async function toggleReaction(msgId, emoji){
-  const fb=_fb();
-  if(fb){
-    // Find msg in cache
-    const m=_commMsgsCache.find(m=>(m.id===msgId||m.fbKey===msgId));
-    if(!m||!m.fbKey) return;
-    const reactions={...((m.reactions)||{})};
-    const meKey=emoji+'_me';
-    if(reactions[meKey]){reactions[emoji]=Math.max(0,(reactions[emoji]||1)-1);delete reactions[meKey];}
-    else{reactions[emoji]=(reactions[emoji]||0)+1;reactions[meKey]=true;}
-    try{await fb.update(fb.ref(fb.db,'ff_chat/'+currentRoom+'/'+m.fbKey),{reactions});}catch{}
+function toggleReaction(msgId, emoji){
+  const msgs = getCommMsgs(currentRoom);
+  const m = msgs.find(m=>m.id===msgId);
+  if(!m) return;
+  if(!m.reactions) m.reactions={};
+  const meKey = emoji+'_me';
+  if(m.reactions[meKey]){
+    m.reactions[emoji] = Math.max(0,(m.reactions[emoji]||1)-1);
+    delete m.reactions[meKey];
   } else {
-    const msgs=getCommMsgsLocal(currentRoom);
-    const m=msgs.find(m=>m.id===msgId);if(!m)return;
-    if(!m.reactions)m.reactions={};
-    const meKey=emoji+'_me';
-    if(m.reactions[meKey]){m.reactions[emoji]=Math.max(0,(m.reactions[emoji]||1)-1);delete m.reactions[meKey];}
-    else{m.reactions[emoji]=(m.reactions[emoji]||0)+1;m.reactions[meKey]=true;}
-    saveCommMsgsLocal(currentRoom,msgs);renderCommMsgs(false);
+    m.reactions[emoji] = (m.reactions[emoji]||0)+1;
+    m.reactions[meKey] = true;
   }
+  saveCommMsgs(currentRoom, msgs);
+  renderCommMsgs(false);
 }
 
-async function deleteCommMsg(msgId, fbKey){
-  const fb=_fb();
-  if(fb){
-    const m=_commMsgsCache.find(m=>(m.id===msgId||m.fbKey===msgId||m.fbKey===fbKey));
-    if(!m){showToast('❌ Pesan tidak ditemukan','error');return;}
-    if(m.userId!==getMyUserId()&&currentRole!=='admin'){showToast('❌ Tidak bisa hapus pesan orang lain!','error');return;}
-    try{await fb.remove(fb.ref(fb.db,'ff_chat/'+currentRoom+'/'+m.fbKey));showToast('🗑️ Pesan dihapus','info');}catch(e){showToast('❌ Gagal hapus: '+e.message,'error');}
-  } else {
-    const msgs=getCommMsgsLocal(currentRoom);
-    const idx=msgs.findIndex(m=>m.id===msgId);if(idx===-1)return;
-    const m=msgs[idx];
-    if(m.userId!==getMyUserId()&&currentRole!=='admin'){showToast('❌ Tidak bisa hapus pesan orang lain!','error');return;}
-    msgs.splice(idx,1);saveCommMsgsLocal(currentRoom,msgs);renderCommMsgs(false);showToast('🗑️ Pesan dihapus','info');
-  }
+function deleteCommMsg(msgId){
+  const msgs = getCommMsgs(currentRoom);
+  const idx = msgs.findIndex(m=>m.id===msgId);
+  if(idx===-1) return;
+  const m = msgs[idx];
+  if(m.userId!==getMyUserId() && currentRole!=='admin'){ showToast('❌ Tidak bisa hapus pesan orang lain!','error'); return; }
+  msgs.splice(idx,1);
+  saveCommMsgs(currentRoom, msgs);
+  renderCommMsgs(false);
+  showToast('🗑️ Pesan dihapus','info');
 }
 
 function startReply(id, user, preview){
-  replyTo={id,user,text:preview};
+  replyTo = {id, user, text: preview};
+  const ri = document.getElementById('replyIndicator');
   document.getElementById('replyPreview').textContent=`↩️ Membalas ${user}: ${preview}`;
-  document.getElementById('replyIndicator').classList.add('show');
-  document.getElementById('commInput').focus();playSound('click');
+  ri.classList.add('show');
+  document.getElementById('commInput').focus();
+  playSound('click');
 }
 function cancelReply(){
   replyTo=null;
-  const ri=document.getElementById('replyIndicator');if(ri)ri.classList.remove('show');
+  const ri=document.getElementById('replyIndicator');
+  if(ri) ri.classList.remove('show');
 }
+
 function scrollToMsg(id){
   const el=document.getElementById('commsg-'+id);
   if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.outline='2px solid var(--gold-dark)';setTimeout(()=>el.style.outline='',1500);}
 }
+
 function handleCommImage(e){
-  const file=e.target.files[0];if(!file)return;
+  const file=e.target.files[0]; if(!file)return;
   if(file.size>1.5*1024*1024){showToast('❌ Gambar max 1.5MB!','error');return;}
   const reader=new FileReader();
-  reader.onload=r=>{commImgData=r.target.result;showToast('📷 Gambar siap dikirim!','success');playSound('click');};
-  reader.readAsDataURL(file);e.target.value='';
-}
-function openLightbox(src){document.getElementById('lightboxImg').src=src;document.getElementById('imgLightbox').classList.add('open');}
-function closeLightbox(){document.getElementById('imgLightbox').classList.remove('open');}
-function autoResizeTextarea(el){el.style.height='42px';el.style.height=Math.min(el.scrollHeight,120)+'px';}
-
-// ---- Online presence via Firebase ----
-let _presenceInterval = null;
-function _startOnlinePresence(){
-  const fb=_fb();if(!fb)return;
-  const myUid=getMyUserId();
-  function _heartbeat(){
-    try{
-      fb.update(fb.ref(fb.db,'ff_presence/'+currentRoom+'/'+myUid),{user:currentUser||'?',ts:Date.now(),ts_server:fb.serverTimestamp()});
-    }catch{}
-  }
-  _heartbeat();
-  if(_presenceInterval)clearInterval(_presenceInterval);
-  _presenceInterval=setInterval(_heartbeat,15000);
-  // Listen to presence for online count
-  const presRef=fb.ref(fb.db,'ff_presence/'+currentRoom);
-  fb.onValue(presRef,(snap)=>{
-    const data=snap.val()||{};
-    const now=Date.now();
-    const online=Object.values(data).filter(v=>v.ts&&(now-v.ts)<60000).length;
-    const el=document.getElementById('onlineCount');
-    if(el)el.textContent=online+' online 🔴';
-  });
+  reader.onload=r=>{
+    commImgData=r.target.result;
+    showToast('📷 Gambar siap dikirim!','success');
+    playSound('click');
+  };
+  reader.readAsDataURL(file);
+  e.target.value='';
 }
 
-// ---- Typing indicator via Firebase ----
-let typingTimer=null;
-function handleTyping(){
-  const fb=_fb();
-  if(fb){
-    try{
-      fb.update(fb.ref(fb.db,'ff_typing/'+currentRoom+'/'+getMyUserId()),{user:currentUser,ts:Date.now()});
-      clearTimeout(typingTimer);
-      typingTimer=setTimeout(()=>{
-        try{fb.remove(fb.ref(fb.db,'ff_typing/'+currentRoom+'/'+getMyUserId()));}catch{}
-      },2500);
-    }catch{}
-  } else {
-    try{
-      const key='ff_chat_typing_'+currentRoom;
-      const typers=JSON.parse(localStorage.getItem(key)||'{}');
-      typers[getMyUserId()]={user:currentUser,ts:Date.now()};
-      localStorage.setItem(key,JSON.stringify(typers));
-      clearTimeout(typingTimer);
-      typingTimer=setTimeout(()=>{
-        try{const t2=JSON.parse(localStorage.getItem(key)||'{}');delete t2[getMyUserId()];localStorage.setItem(key,JSON.stringify(t2));}catch{}
-      },2500);
-    }catch{}
-  }
+function openLightbox(src){
+  document.getElementById('lightboxImg').src=src;
+  document.getElementById('imgLightbox').classList.add('open');
+}
+function closeLightbox(){
+  document.getElementById('imgLightbox').classList.remove('open');
 }
 
-// ---- Init typing listener (Firebase) ----
-function _initTypingListener(){
-  const fb=_fb();if(!fb)return;
-  const typRef=fb.ref(fb.db,'ff_typing/'+currentRoom);
-  fb.onValue(typRef,(snap)=>{
-    const data=snap.val()||{};
-    const now=Date.now();
-    const others=Object.entries(data)
-      .filter(([uid,v])=>uid!==getMyUserId()&&v.ts&&(now-v.ts)<3000)
-      .map(([,v])=>v.user);
-    const ti=document.getElementById('typingIndicator');
-    const tt=document.getElementById('typingText');
-    if(others.length&&ti&&tt){
-      ti.classList.add('show');
-      tt.textContent=others.join(', ')+(others.length===1?' sedang mengetik...':' sedang mengetik...');
-      clearTimeout(typingTimeout);
-      typingTimeout=setTimeout(()=>ti&&ti.classList.remove('show'),3200);
-    } else if(ti) ti.classList.remove('show');
-  });
+function autoResizeTextarea(el){
+  el.style.height='42px';
+  el.style.height=Math.min(el.scrollHeight,120)+'px';
 }
 
 function updateOnlineCount(){
-  // localStorage fallback only
+  // Simulate based on recent activity (stored in localStorage)
   const key='ff_chat_heartbeat_'+currentRoom;
   try{
     const beats=JSON.parse(localStorage.getItem(key)||'{}');
     beats[getMyUserId()]=Date.now();
+    // Clean old beats (>1 min)
     Object.keys(beats).forEach(k=>{if(Date.now()-beats[k]>60000)delete beats[k];});
     localStorage.setItem(key,JSON.stringify(beats));
     const count=Object.keys(beats).length;
     const el=document.getElementById('onlineCount');
-    if(el&&!_fb())el.textContent=count+' online';
+    if(el) el.textContent=count+' online';
+  }catch{}
+}
+
+let typingTimer=null;
+function handleTyping(){
+  // Store typing indicator in localStorage for cross-tab awareness
+  try{
+    const key='ff_chat_typing_'+currentRoom;
+    const typers=JSON.parse(localStorage.getItem(key)||'{}');
+    typers[getMyUserId()]={user:currentUser,ts:Date.now()};
+    localStorage.setItem(key,JSON.stringify(typers));
+    clearTimeout(typingTimer);
+    typingTimer=setTimeout(()=>{
+      try{
+        const t2=JSON.parse(localStorage.getItem(key)||'{}');
+        delete t2[getMyUserId()];
+        localStorage.setItem(key,JSON.stringify(t2));
+      }catch{}
+    },2500);
   }catch{}
 }
 
@@ -2525,8 +2406,8 @@ window.addEventListener('storage', e => {
   if (!e.key) return;
   // RESET broadcast
   if(e.key===RESET_BROADCAST_KEY) checkGlobalReset();
-  // Cross-tab typing indicator (localStorage fallback only, Firebase has own listener)
-  if (!_fb() && e.key.startsWith('ff_chat_typing_')) {
+  // Cross-tab: update typing indicator
+  if (e.key.startsWith('ff_chat_typing_')) {
     try {
       const typers = JSON.parse(e.newValue || '{}');
       const others = Object.values(typers).filter(t=>t.user!==currentUser&&Date.now()-t.ts<3000);
@@ -2544,22 +2425,6 @@ window.addEventListener('storage', e => {
 
 // Panggil checkAutoLogin setelah semua override selesai
 checkAutoLogin();
-
-// Hide Firebase setup banner if Firebase is connected
-(function(){
-  function _checkFbBanner(){
-    const fb = window._firebase;
-    const banner = document.getElementById('firebaseSetupBanner');
-    if(!banner) return;
-    if(fb && fb.firebaseReady){
-      banner.style.display = 'none';
-      // Init typing listener
-      setTimeout(_initTypingListener, 500);
-    }
-  }
-  // Check after module loads (slight delay)
-  setTimeout(_checkFbBanner, 1500);
-})();
 
 </script>
 </body>
