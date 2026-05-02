@@ -746,9 +746,9 @@ input:focus,select:focus{outline:none;border-color:var(--gold-dark);box-shadow:0
     <!-- ====== COMMUNITY CHAT ====== -->
     <div id="communitySection" class="section">
       <!-- Firebase Setup Banner (shown when not configured) -->
-      <div id="firebaseSetupBanner" style="background:linear-gradient(135deg,#1a4b6b,#2980b9);color:#fff;padding:10px 18px;font-size:.82em;font-weight:700;display:flex;align-items:center;gap:9px;flex-wrap:wrap">
-        <span>💬</span>
-        <span style="flex:1">Chat tersimpan ke <b>MongoDB</b> via Railway — realtime lintas device! 🚀</span>
+      <div id="firebaseSetupBanner" style="background:linear-gradient(135deg,#e67e22,#c0392b);color:#fff;padding:10px 18px;font-size:.82em;font-weight:700;display:flex;align-items:center;gap:9px;flex-wrap:wrap">
+        <span>🔥</span>
+        <span style="flex:1">Chat realtime lintas device membutuhkan Firebase. <a href="https://console.firebase.google.com" target="_blank" style="color:#fff;text-decoration:underline">Setup gratis di sini</a> lalu masukkan config di kode. Saat ini berjalan di mode lokal (tab ini saja).</span>
         <button onclick="this.parentElement.style.display='none'" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:4px 9px;cursor:pointer;font-weight:700">✕</button>
       </div>
       <div class="community-header">
@@ -1008,9 +1008,9 @@ input:focus,select:focus{outline:none;border-color:var(--gold-dark);box-shadow:0
 
 <!-- CHATBOT -->
 <div class="chatbot-box" id="chatbotBox">
-  <div class="chatbot-header">🤖 AI Assistant (Groq)<button onclick="toggleChatbot()" style="background:none;border:none;color:#fff;font-size:1.05em;cursor:pointer">✕</button></div>
+  <div class="chatbot-header">🤖 Admin Assistant<button onclick="toggleChatbot()" style="background:none;border:none;color:#fff;font-size:1.05em;cursor:pointer">✕</button></div>
   <div class="chatbot-msgs" id="chatMsgs">
-    <div class="chat-msg bot">👋 Halo Admin! Saya asisten AI berbasis Groq/Llama3. Tanya apa saja tentang data intro FF. (Butuh API key gratis dari groq.com)</div>
+    <div class="chat-msg bot">👋 Halo Admin! Tanya apa aja tentang data intro FF.</div>
   </div>
   <div class="chatbot-input">
     <input type="text" id="chatInput" placeholder="Tanya sesuatu..." onkeydown="if(event.key==='Enter')sendChat()">
@@ -1052,11 +1052,7 @@ input:focus,select:focus{outline:none;border-color:var(--gold-dark);box-shadow:0
 // =======================================
 const ADMIN_USER  = 'lawliet';
 const ADMIN_PASS  = 'L';
-// ⬇️ Ganti dengan URL deploy kamu (Railway, Render, VPS, dll)
-const BACKEND_URL = 'https://introff.up.railway.app';
-const API         = BACKEND_URL + '/api/intro';
-const CHAT_API    = BACKEND_URL + '/api/community';
-const AI_API      = BACKEND_URL + '/api/chat';
+const API         = 'https://introff.up.railway.app/intro';
 const MOD_STORE_KEY = 'ff_moderators';
 const DEFAULT_MODS  = [{ user:'moderator', pass:'mod123' }];
 
@@ -2024,35 +2020,25 @@ async function sendDiscordWebhook(item){
 }
 
 // =======================================
-// CHATBOT — via Backend /api/ai (Groq/Llama3)
-// Backend handle API key, aman tidak expose ke browser
+// CHATBOT
 // =======================================
 let chatHistory=[];
 function toggleChatbot(){ const box=document.getElementById('chatbotBox');box.classList.toggle('open');if(box.classList.contains('open'))document.getElementById('chatInput').focus();playSound('click'); }
 async function sendChat(){
   const input=document.getElementById('chatInput'),msg=input.value.trim();if(!msg)return;
   input.value='';appendChatMsg(msg,'user');
-  const stats=`Total: ${allData.length} data.`+(allData.length?` Rata-rata level: ${(allData.reduce((a,b)=>a+(b.levelAkun||0),0)/allData.length).toFixed(0)}.`:'')+(allData.length?` Daerah terbanyak: ${Object.entries(allData.reduce((acc,d)=>{acc[d.kota]=(acc[d.kota]||0)+1;return acc;},{})).sort((a,b)=>b[1]-a[1])[0]?.[0]||'-'}.`:'');
+  const stats=`Total: ${allData.length} data.`+(allData.length?` Avg level: ${(allData.reduce((a,b)=>a+(b.levelAkun||0),0)/allData.length).toFixed(0)}.`:'')+(allData.length?` Daerah terbanyak: ${Object.entries(allData.reduce((acc,d)=>{acc[d.kota]=(acc[d.kota]||0)+1;return acc;},{})).sort((a,b)=>b[1]-a[1])[0]?.[0]||'-'}.`:'');
   const userList=allData.slice(0,10).map(d=>`${d.namaInGame}(${d.ffId},Lv${d.levelAkun},${d.gender||'?'},${d.kota})`).join('; ');
-  const systemPrompt=`Kamu adalah asisten admin untuk sistem Intro FF (Free Fire) bernama Golden System. Jawab dalam bahasa Indonesia yang singkat dan ramah. Data saat ini: ${stats}${userList?` Contoh member: ${userList}`:''}`;
   chatHistory.push({role:'user',content:msg});
   if(chatHistory.length>20)chatHistory=chatHistory.slice(-20);
   const typingId=appendChatMsg('⏳ Mengetik...','bot typing');
   try{
-    const resp=await fetch(AI_API,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({message:msg+' | Konteks: '+stats+(userList?' | Member: '+userList:'')})
-    });
-    if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e?.error||'HTTP '+resp.status);}
+    // ✅ FIX Bug 3: pakai backend server, bukan Anthropic langsung dari browser
+    const resp=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:`${stats} ${userList} Pertanyaan: ${msg}`})});
     const data=await resp.json();
     const reply=data.content?.[0]?.text||'Maaf, tidak bisa memproses pertanyaanmu.';
-    chatHistory.push({role:'assistant',content:reply});
-    removeChatMsg(typingId);appendChatMsg(reply,'bot');
-  }catch(e){
-    removeChatMsg(typingId);
-    appendChatMsg('❌ '+e.message,'bot');
-  }
+    chatHistory.push({role:'assistant',content:reply});removeChatMsg(typingId);appendChatMsg(reply,'bot');
+  }catch(e){removeChatMsg(typingId);appendChatMsg('❌ Koneksi ke server gagal.','bot');}
 }
 let chatMsgCount=0;
 function appendChatMsg(text,type){ const id='cmsg_'+(++chatMsgCount),el=document.createElement('div');el.className='chat-msg '+type;el.id=id;el.textContent=text;const msgs=document.getElementById('chatMsgs');msgs.appendChild(el);msgs.scrollTop=msgs.scrollHeight;return id; }
@@ -2197,23 +2183,6 @@ const REACTIONS = ['👍','❤️','😂','😮','🔥','🎯'];
 // ---- Helper: Firebase ready? ----
 function _fb(){ return window._firebase && window._firebase.firebaseReady ? window._firebase : null; }
 
-// ---- MongoDB Backend: load messages ----
-async function _loadMsgsFromBackend(room){
-  try{
-    const resp = await fetch(CHAT_API + '/' + room);
-    if(!resp.ok) throw new Error('HTTP '+resp.status);
-    const data = await resp.json();
-    // Normalize: backend uses _id, frontend uses id
-    _commMsgsCache = (data.msgs||[]).map(m=>({...m, id: m._id||m.id}));
-    renderCommMsgs(_commMsgsCache.length > lastMsgCount);
-    lastMsgCount = _commMsgsCache.length;
-    updateOnlineCount();
-  } catch(e){
-    // fallback to localStorage silently
-    renderCommMsgs(false);
-  }
-}
-
 // ---- LocalStorage fallback ----
 function getCommMsgsLocal(room){
   try{return JSON.parse(localStorage.getItem(COMM_STORAGE_KEY+'_'+room))||[];}catch{return[];}
@@ -2277,9 +2246,18 @@ function initCommunityChat(){
     // Typing via Firebase presence
     _startOnlinePresence();
   } else {
-    // MongoDB backend polling (realtime via interval)
-    _loadMsgsFromBackend(currentRoom);
-    commPollInterval = setInterval(()=>_loadMsgsFromBackend(currentRoom), 3000);
+    // Fallback: localStorage + poll
+    showToast('⚠️ Mode offline — chat hanya di tab ini','warning');
+    renderCommMsgs();
+    updateOnlineCount();
+    commPollInterval = setInterval(()=>{
+      const msgs=getCommMsgsLocal(currentRoom);
+      if(msgs.length!==lastMsgCount){lastMsgCount=msgs.length;renderCommMsgs(false);}
+      updateOnlineCount();
+    }, 2500);
+    window.addEventListener('storage', e=>{
+      if(e.key && e.key.startsWith(COMM_STORAGE_KEY)) renderCommMsgs(false);
+    });
   }
 }
 
@@ -2299,11 +2277,12 @@ function switchRoom(room, btn){
   if(pb) pb.classList.add('show');
   const fb=_fb();
   if(fb) _attachFirebaseListener(room);
-  else { _loadMsgsFromBackend(room); }
+  else renderCommMsgs();
 }
 
 function renderCommMsgs(scrollToBottom=true){
-  const msgs = _commMsgsCache.length ? _commMsgsCache : getCommMsgsLocal(currentRoom);
+  const fb = _fb();
+  const msgs = fb ? _commMsgsCache : getCommMsgsLocal(currentRoom);
   const container = document.getElementById('communityMsgs');
   if(!container) return;
   lastMsgCount = msgs.length;
@@ -2370,23 +2349,20 @@ async function sendCommMsg(){
 
   const fb=_fb();
   if(fb){
+    // Send to Firebase — all devices will receive it via onValue listener
     try{
       await fb.push(fb.ref(fb.db,'ff_chat/'+currentRoom), msg);
       playSound('success');
-    }catch(e){ showToast('❌ Gagal kirim: '+e.message,'error'); }
-  } else {
-    // MongoDB backend
-    try{
-      const resp=await fetch(CHAT_API+'/'+currentRoom,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(msg)});
-      if(!resp.ok){const d=await resp.json().catch(()=>({}));throw new Error(d.error||'HTTP '+resp.status);}
-      await _loadMsgsFromBackend(currentRoom);
-      playSound('success');
     }catch(e){
-      // ultimate fallback: localStorage
-      const msgs=getCommMsgsLocal(currentRoom);msgs.push(msg);saveCommMsgsLocal(currentRoom,msgs);
-      renderCommMsgs(true);playSound('success');
-      showToast('⚠️ Offline — pesan disimpan lokal','warning');
+      showToast('❌ Gagal kirim: '+e.message,'error');
     }
+  } else {
+    // localStorage fallback
+    const msgs=getCommMsgsLocal(currentRoom);
+    msgs.push(msg);
+    saveCommMsgsLocal(currentRoom,msgs);
+    renderCommMsgs(true);
+    playSound('success');
   }
 }
 
@@ -2402,19 +2378,13 @@ async function toggleReaction(msgId, emoji){
     else{reactions[emoji]=(reactions[emoji]||0)+1;reactions[meKey]=true;}
     try{await fb.update(fb.ref(fb.db,'ff_chat/'+currentRoom+'/'+m.fbKey),{reactions});}catch{}
   } else {
-    // MongoDB
-    try{
-      const resp=await fetch(CHAT_API+'/'+currentRoom+'/'+msgId+'/react',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({emoji,userId:getMyUserId()})});
-      if(resp.ok){ const d=await resp.json(); const m=_commMsgsCache.find(m=>m.id===msgId||m._id===msgId); if(m)m.reactions=d.reactions; renderCommMsgs(false); }
-    }catch{
-      const msgs=getCommMsgsLocal(currentRoom);
-      const m=msgs.find(m=>m.id===msgId);if(!m)return;
-      if(!m.reactions)m.reactions={};
-      const meKey=emoji+'_me';
-      if(m.reactions[meKey]){m.reactions[emoji]=Math.max(0,(m.reactions[emoji]||1)-1);delete m.reactions[meKey];}
-      else{m.reactions[emoji]=(m.reactions[emoji]||0)+1;m.reactions[meKey]=true;}
-      saveCommMsgsLocal(currentRoom,msgs);renderCommMsgs(false);
-    }
+    const msgs=getCommMsgsLocal(currentRoom);
+    const m=msgs.find(m=>m.id===msgId);if(!m)return;
+    if(!m.reactions)m.reactions={};
+    const meKey=emoji+'_me';
+    if(m.reactions[meKey]){m.reactions[emoji]=Math.max(0,(m.reactions[emoji]||1)-1);delete m.reactions[meKey];}
+    else{m.reactions[emoji]=(m.reactions[emoji]||0)+1;m.reactions[meKey]=true;}
+    saveCommMsgsLocal(currentRoom,msgs);renderCommMsgs(false);
   }
 }
 
@@ -2426,23 +2396,11 @@ async function deleteCommMsg(msgId, fbKey){
     if(m.userId!==getMyUserId()&&currentRole!=='admin'){showToast('❌ Tidak bisa hapus pesan orang lain!','error');return;}
     try{await fb.remove(fb.ref(fb.db,'ff_chat/'+currentRoom+'/'+m.fbKey));showToast('🗑️ Pesan dihapus','info');}catch(e){showToast('❌ Gagal hapus: '+e.message,'error');}
   } else {
-    // MongoDB backend
-    try{
-      const msgMongoId = _commMsgsCache.find(m=>m.id===msgId)?._id || msgId;
-      const resp=await fetch(CHAT_API+'/'+currentRoom+'/'+msgMongoId,{
-        method:'DELETE',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({userId:getMyUserId(),role:currentRole||'user'})
-      });
-      if(!resp.ok){const d=await resp.json().catch(()=>({}));throw new Error(d.error||'HTTP '+resp.status);}
-      showToast('🗑️ Pesan dihapus','info');
-      await _loadMsgsFromBackend(currentRoom);
-    }catch(e){
-      // localStorage fallback
-      const msgs=getCommMsgsLocal(currentRoom);
-      const idx=msgs.findIndex(m=>m.id===msgId);if(idx!==-1){msgs.splice(idx,1);saveCommMsgsLocal(currentRoom,msgs);renderCommMsgs(false);}
-      showToast('🗑️ Pesan dihapus','info');
-    }
+    const msgs=getCommMsgsLocal(currentRoom);
+    const idx=msgs.findIndex(m=>m.id===msgId);if(idx===-1)return;
+    const m=msgs[idx];
+    if(m.userId!==getMyUserId()&&currentRole!=='admin'){showToast('❌ Tidak bisa hapus pesan orang lain!','error');return;}
+    msgs.splice(idx,1);saveCommMsgsLocal(currentRoom,msgs);renderCommMsgs(false);showToast('🗑️ Pesan dihapus','info');
   }
 }
 
