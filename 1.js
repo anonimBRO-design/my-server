@@ -10,11 +10,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 // 🔥 CONNECT DATABASE
-if (!process.env.MONGO_URI) {
-  console.error("❌ MONGO_URI environment variable tidak diset! Tambahkan di Railway.");
-  process.exit(1);
-}
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect(process.env.MONGO_URI || "mongodb+srv://axiooxjkt48pro_db_user:LwEII86ghHvHxhJ0@intro.ifepmi9.mongodb.net/introDB")
 .then(() => console.log("✅ MongoDB Connected"))
 .catch(err => console.log("❌ MongoDB Error:", err));
 
@@ -25,7 +21,6 @@ namaInGame: String,
 namaReal:   String,
 levelAkun:  Number,
 usia:       Number,
-gender:     String,   // ✅ FIX Bug 1: field gender sebelumnya hilang
 kota:       String,
 tanggal:    String,
 waktu:      String,
@@ -47,49 +42,84 @@ catch { return false; }
 }
 
 // ============================================================
-// 🤖 CHATBOT — Anthropic Claude (server-side, API key aman)
+// 🤖 CHATBOT FIX — ANTI 500
 // ============================================================
 app.post("/api/chat", async (req, res) => {
-const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+const HF_TOKEN = process.env.HF_TOKEN;
 
-if (!ANTHROPIC_KEY) {
-  return res.json({
-    content: [{ type: "text", text: "ANTHROPIC_API_KEY belum diset di environment variable." }]
-  });
+if (!HF_TOKEN) {
+return res.json({
+content: [{ type: "text", text: "HF_TOKEN belum diset" }]
+});
 }
 
 try {
-  const userMessage = req.body.message;
-  if (!userMessage) return res.json({ content: [{ type: "text", text: "Pesan kosong." }] });
+const userMessage = req.body.message;
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
+```
+const response = await fetch(
+  "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
+  {
     method: "POST",
     headers: {
-      "x-api-key": ANTHROPIC_KEY,
-      "anthropic-version": "2023-06-01",
+      "Authorization": "Bearer " + HF_TOKEN,
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 400,
-      system: "Kamu adalah asisten admin website intro Free Fire. Jawab singkat, jelas, dan ramah dalam Bahasa Indonesia.",
-      messages: [{ role: "user", content: userMessage }]
+      inputs: "Kamu adalah admin assistant website intro Free Fire. Jawab singkat dan jelas: " + userMessage
     })
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    console.log("Anthropic error:", data);
-    return res.json({ content: [{ type: "text", text: "AI error — cek API key di environment variable." }] });
   }
+);
 
-  const reply = data.content?.[0]?.text || "Maaf, tidak ada respons dari AI.";
-  res.json({ content: [{ type: "text", text: reply }] });
+const data = await response.json();
+
+// 🔥 HANDLE SEMUA KASUS
+if (!response.ok) {
+  console.log("HF STATUS ERROR:", data);
+  return res.json({
+    content: [
+      { type: "text", text: "AI error (HF API)" }
+    ]
+  });
+}
+
+// kalau model loading / error
+if (data.error) {
+  console.log("HF ERROR:", data.error);
+  return res.json({
+    content: [
+      { type: "text", text: "AI lagi loading... coba lagi bentar" }
+    ]
+  });
+}
+
+// kalau format beda
+let reply = "AI tidak merespon";
+
+if (Array.isArray(data)) {
+  reply = data[0]?.generated_text || reply;
+} else if (data.generated_text) {
+  reply = data.generated_text;
+}
+
+res.json({
+  content: [
+    { type: "text", text: reply }
+  ]
+});
+```
 
 } catch (err) {
-  console.error("CHAT ERROR:", err);
-  res.json({ content: [{ type: "text", text: "Server error — cek logs." }] });
+console.error("CHAT ERROR FULL:", err);
+
+```
+res.json({
+  content: [
+    { type: "text", text: "Server error (cek logs)" }
+  ]
+});
+```
+
 }
 });
 
